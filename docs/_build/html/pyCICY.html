@@ -1,0 +1,1067 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>pyCICY package &#8212; pyCICY 0.01 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="How to use pyCICY" href="howto.html" />
+    <link rel="prev" title="pyCICY" href="modules.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="pycicy-package">
+<h1>pyCICY package<a class="headerlink" href="#pycicy-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-pyCICY.pyCICY">
+<span id="pycicy-pycicy-module"></span><h2>pyCICY.pyCICY module<a class="headerlink" href="#module-pyCICY.pyCICY" title="Permalink to this headline">¶</a></h2>
+<p>Created on Fri Jun 08 16:45:23 2018</p>
+<p>pyCICY - A python CICY toolkit. It allows for computation of
+line bundle cohomologies over Complete Intersection
+Calabi Yau manifolds.</p>
+<p>Further, it includes functions to determine various
+topological quantities, such as Chern classes, hodge numbers
+and triple intersection numbers.</p>
+<div class="section" id="authors">
+<h3>Authors<a class="headerlink" href="#authors" title="Permalink to this headline">¶</a></h3>
+<p>Magdalena Larfors (<a class="reference external" href="mailto:magdalena&#46;larfors&#37;&#52;&#48;physics&#46;uu&#46;se">magdalena<span>&#46;</span>larfors<span>&#64;</span>physics<span>&#46;</span>uu<span>&#46;</span>se</a>)
+Robin Schneider (<a class="reference external" href="mailto:robin&#46;schneider&#37;&#52;&#48;physics&#46;uu&#46;se">robin<span>&#46;</span>schneider<span>&#64;</span>physics<span>&#46;</span>uu<span>&#46;</span>se</a>)</p>
+</div>
+<div class="section" id="version">
+<h3>Version<a class="headerlink" href="#version" title="Permalink to this headline">¶</a></h3>
+<p>0.01 - pyCICY toolkit made available - 29.5.2019.</p>
+<dl class="class">
+<dt id="pyCICY.pyCICY.CICY">
+<em class="property">class </em><code class="descclassname">pyCICY.pyCICY.</code><code class="descname">CICY</code><span class="sig-paren">(</span><em>name</em>, <em>conf</em>, <em>doc=False</em>, <em>dir='~/Documents/data/CICY/'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.Leray">
+<code class="descname">Leray</code><span class="sig-paren">(</span><em>V</em>, <em>line=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.Leray"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.Leray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the first instance, i=1, of a Leray table for a given vector bundle V.</p>
+<div class="math notranslate nohighlight">
+\[\begin{align}
+    E_{i+1}^{j,k} = \frac{\text{Ker}(d_i : E_{i}^{j,k} (\mathcal{V}) \rightarrow E_i^{j-1,k-1}(\mathcal{V}) )}{\text{Im}(d_i : E_{i}^{j+i-1,k+i} (\mathcal{V}) \rightarrow E_i^{j,k}(\mathcal{V}) )}
+    \end{align}\]</div>
+<p>V has to be in proper BBW notation, this is most easily achieved, by taking e.g. a line bundle L = [q_1 , … ,q_n] and</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">V</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">_line_to_BBW</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>V</strong> (<em>nested list</em>) – A vector bundle in BBW notation.</p></li>
+<li><p><strong>line</strong> (<em>bool</em><em>, </em><em>optional</em>) – True, if the vector bundle is a line bundle, by default True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>E</strong> (<em>nested list</em>) – The first Leray instance</p></li>
+<li><p><strong>origin</strong> (<em>nested list</em>) – The origin of each non trivial entry.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.line_co" title="pyCICY.pyCICY.CICY.line_co"><code class="xref py py-meth docutils literal notranslate"><span class="pre">line_co()</span></code></a></dt><dd><p>Line bundle cohomology of L.</p>
+</dd>
+<dt><code class="xref py py-meth docutils literal notranslate"><span class="pre">_line_to_BBW()</span></code></dt><dd><p>Transforms a line bundle into BBW notation.</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">CICY</span><span class="p">(</span><span class="s1">&#39;7833&#39;</span><span class="p">,</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">V</span> <span class="o">=</span> <span class="n">M</span><span class="o">.</span><span class="n">_line_to_BBW</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span><span class="o">-</span><span class="mi">4</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">Leray</span><span class="p">()</span>
+<span class="go">([[0, 0, 0, [[3, 0]], 0, 0], [0, 0, 0, [[1, -1], [2, -3]], 0, 0], [0, 0, 0, [[0, -4]], 0, 0]],</span>
+<span class="go"> [[0, 0, 0, 0, 0, 0], [0, 0, 0, [(0,), (1,)], 0, 0], [0, 0, 0, [(0, 1)], 0, 0]])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.def_poly">
+<code class="descname">def_poly</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.def_poly"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.def_poly" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the defining polynomials with (redundant) complex moduli as coefficients.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>normal</strong> – A list of the normal sections in terms of monomials.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>list/sympyexpr</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">CICY</span><span class="p">(</span><span class="s1">&#39;quintic&#39;</span><span class="p">,</span> <span class="p">[[</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">def_poly</span><span class="p">()</span>
+<span class="go">[45*x0**5 + 50*x0**4*x1 + ... + 40*x3*x4**4 + 30*x4**5]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.drst">
+<code class="descname">drst</code><span class="sig-paren">(</span><em>r</em>, <em>s</em>, <em>t</em>, <em>x=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.drst"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.drst" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the triple intersection number d_rst.
+We use:</p>
+<div class="math notranslate nohighlight">
+\[\begin{align}
+ d_{rst} = \int_X J_r \wedge J_s \wedge J_t = \int_A \mu \wedge J_r \wedge J_s \wedge J_t
+\end{align}\]</div>
+<p>where mu is the top form</p>
+<div class="math notranslate nohighlight">
+\[\begin{align}
+\mu = \bigwedge^K_{a=1} \left(  \sum_{p=1}^{m} q_a^p J_p  \right) \; .
+\end{align}\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>r</strong> (<em>int</em>) – index r.</p></li>
+<li><p><strong>s</strong> (<em>int</em>) – index s.</p></li>
+<li><p><strong>t</strong> (<em>int</em>) – index t.</p></li>
+<li><p><strong>x</strong> (<em>int</em><em>, </em><em>optional</em>) – Normalization for integral, by default 1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>drst</strong> – Returns the triple intersection number drst.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>Exception</strong> – Only defined for Calabi Yau threefolds.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.drstmatrix" title="pyCICY.pyCICY.CICY.drstmatrix"><code class="xref py py-meth docutils literal notranslate"><span class="pre">drstmatrix()</span></code></a></dt><dd><p>Determines all triple intersection numbers.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.secondchernvector" title="pyCICY.pyCICY.CICY.secondchernvector"><code class="xref py py-meth docutils literal notranslate"><span class="pre">secondchernvector()</span></code></a></dt><dd><p>The second Chern class as a vector.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.eulerc" title="pyCICY.pyCICY.CICY.eulerc"><code class="xref py py-meth docutils literal notranslate"><span class="pre">eulerc()</span></code></a></dt><dd><p>The eulercharacteristic.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.drstu" title="pyCICY.pyCICY.CICY.drstu"><code class="xref py py-meth docutils literal notranslate"><span class="pre">drstu()</span></code></a></dt><dd><p>The quadruple intersection numbers for a four fold.</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">CICY</span><span class="p">(</span><span class="s1">&#39;7833&#39;</span><span class="p">,</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">drst</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">7.0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.drstmatrix">
+<code class="descname">drstmatrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.drstmatrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.drstmatrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines all triple intersection numbers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>d</strong> – numpy array of all triple intersection numbers, d_rst.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>array[nProj, nProj, nProj]</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.drst" title="pyCICY.pyCICY.CICY.drst"><code class="xref py py-meth docutils literal notranslate"><span class="pre">drst()</span></code></a></dt><dd><p>Determines the triple intersection number d_rst.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.secondchernvector" title="pyCICY.pyCICY.CICY.secondchernvector"><code class="xref py py-meth docutils literal notranslate"><span class="pre">secondchernvector()</span></code></a></dt><dd><p>The second Chern class as a vector.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.eulerc" title="pyCICY.pyCICY.CICY.eulerc"><code class="xref py py-meth docutils literal notranslate"><span class="pre">eulerc()</span></code></a></dt><dd><p>The eulercharacteristic.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.drstu" title="pyCICY.pyCICY.CICY.drstu"><code class="xref py py-meth docutils literal notranslate"><span class="pre">drstu()</span></code></a></dt><dd><p>The quadruple intersection numbers for a four fold.</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">CICY</span><span class="p">(</span><span class="s1">&#39;7833&#39;</span><span class="p">,</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">drstmatrix</span><span class="p">()</span>
+<span class="go">array([[[0., 3.],</span>
+<span class="go">        [3., 7.]],</span>
+<span class="go">       [[3., 7.],</span>
+<span class="go">        [7., 2.]]])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.drstu">
+<code class="descname">drstu</code><span class="sig-paren">(</span><em>r</em>, <em>s</em>, <em>t</em>, <em>u</em>, <em>x=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.drstu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.drstu" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the quadruple intersection numbers, d_rstu, for Calabi Yau four folds.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>r</strong> (<em>int</em>) – the index r.</p></li>
+<li><p><strong>s</strong> (<em>int</em>) – the index s.</p></li>
+<li><p><strong>t</strong> (<em>int</em>) – the index t.</p></li>
+<li><p><strong>u</strong> (<em>int</em>) – the index u.</p></li>
+<li><p><strong>x</strong> (<em>int</em><em>, </em><em>optional</em>) – Normalization for integral, by default 1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>drstu</strong> – The quadruple intersection number d_rstu.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>Exception</strong> – If the Calabi Yau is smaller than a four fold.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.drst" title="pyCICY.pyCICY.CICY.drst"><code class="xref py py-meth docutils literal notranslate"><span class="pre">drst()</span></code></a></dt><dd><p>Determines the triple intersection number d_rst.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.eulerc" title="pyCICY.pyCICY.CICY.eulerc"><code class="xref py py-meth docutils literal notranslate"><span class="pre">eulerc()</span></code></a></dt><dd><p>The eulercharacteristic.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.drstumatrix" title="pyCICY.pyCICY.CICY.drstumatrix"><code class="xref py py-meth docutils literal notranslate"><span class="pre">drstumatrix()</span></code></a></dt><dd><p>All quadruple intersection numbers of a four fold.</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">CICY</span><span class="p">(</span><span class="s1">&#39;4fold&#39;</span><span class="p">,</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">drstu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+<p class="rubric">References</p>
+<dl class="footnote brackets">
+<dt class="label" id="id1"><span class="brackets">1</span></dt>
+<dd><p>All CICY four-folds, by J. Gray, A. Haupt and A. Lukas.
+<a class="reference external" href="https://arxiv.org/pdf/1303.1832.pdf">https://arxiv.org/pdf/1303.1832.pdf</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.drstumatrix">
+<code class="descname">drstumatrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.drstumatrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.drstumatrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines all quadruple intersection numbers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>d</strong> – numpy array of all quadruple intersection numbers, d_rstu.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>array[nProj, nProj, nProj, nProj]</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.drst" title="pyCICY.pyCICY.CICY.drst"><code class="xref py py-meth docutils literal notranslate"><span class="pre">drst()</span></code></a></dt><dd><p>Determines the triple intersection number d_rst.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.eulerc" title="pyCICY.pyCICY.CICY.eulerc"><code class="xref py py-meth docutils literal notranslate"><span class="pre">eulerc()</span></code></a></dt><dd><p>The eulercharacteristic.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.drst" title="pyCICY.pyCICY.CICY.drst"><code class="xref py py-meth docutils literal notranslate"><span class="pre">drst()</span></code></a></dt><dd><p>The quadruple intersection number d_rstu for a four fold.</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">CICY</span><span class="p">(</span><span class="s1">&#39;4fold&#39;</span><span class="p">,</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">drstu</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">array([[[[0., 0., 0.],</span>
+<span class="go">         [0., 2., 3.],</span>
+<span class="go">         [0., 3., 0.]],</span>
+<span class="go">            ...</span>
+<span class="go">        [[0., 0., 0.],</span>
+<span class="go">         [0., 0., 0.],</span>
+<span class="go">         [0., 0., 0.]]]])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.eulerc">
+<code class="descname">eulerc</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.eulerc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.eulerc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the Euler characteristic via integration of the Chern class. Take e.g. n=3</p>
+<div class="math notranslate nohighlight">
+\[\begin{align}
+ \chi = \frac{1}{2} \int_X c_3 \; .
+\end{align}\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>e</strong> – The euler characteristic.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.drst" title="pyCICY.pyCICY.CICY.drst"><code class="xref py py-meth docutils literal notranslate"><span class="pre">drst()</span></code></a></dt><dd><p>Determines the triple intersection number d_rst.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.thirdchern" title="pyCICY.pyCICY.CICY.thirdchern"><code class="xref py py-meth docutils literal notranslate"><span class="pre">thirdchern()</span></code></a></dt><dd><p>The third Chern class of J_r, J_s, J_t.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.drstu" title="pyCICY.pyCICY.CICY.drstu"><code class="xref py py-meth docutils literal notranslate"><span class="pre">drstu()</span></code></a></dt><dd><p>The quadruple intersection number d_rstu for a four fold.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.fourthchern" title="pyCICY.pyCICY.CICY.fourthchern"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fourthchern()</span></code></a></dt><dd><p>The fourth Chern class of J_r, J_s, J_t, J_u.</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">CICY</span><span class="p">(</span><span class="s1">&#39;7833&#39;</span><span class="p">,</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">eulerc</span><span class="p">()</span>
+<span class="go">-114.0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.firstchern">
+<code class="descname">firstchern</code><span class="sig-paren">(</span><em>r</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.firstchern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.firstchern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the first Chern class corresponding to J_r, via</p>
+<div class="math notranslate nohighlight">
+\[\begin{align}
+c_1^r &amp;= \bigg[ n_r +1 - \sum_{a=1}^{K} q_a^r \bigg].
+\end{align}\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>r</strong> (<em>int</em>) – the index of J_r.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>c1</strong> – The first Chern class corresponding to J_r.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.firstchernvector" title="pyCICY.pyCICY.CICY.firstchernvector"><code class="xref py py-meth docutils literal notranslate"><span class="pre">firstchernvector()</span></code></a></dt><dd><p>All first Chern classes.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.secondchern" title="pyCICY.pyCICY.CICY.secondchern"><code class="xref py py-meth docutils literal notranslate"><span class="pre">secondchern()</span></code></a></dt><dd><p>Second Chern class of J_r, J_s.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.thirdchern" title="pyCICY.pyCICY.CICY.thirdchern"><code class="xref py py-meth docutils literal notranslate"><span class="pre">thirdchern()</span></code></a></dt><dd><p>Third Chern class of J_r, J_s, J_t.</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">CICY</span><span class="p">(</span><span class="s1">&#39;7833&#39;</span><span class="p">,</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">firstchern</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.firstchernvector">
+<code class="descname">firstchernvector</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.firstchernvector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.firstchernvector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the full first Chern class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>vector</strong> – The full firt Chern class for all J_r.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>array[nProj]</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.firstchern" title="pyCICY.pyCICY.CICY.firstchern"><code class="xref py py-meth docutils literal notranslate"><span class="pre">firstchern()</span></code></a></dt><dd><p>First Chern class of J_r.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.secondchern" title="pyCICY.pyCICY.CICY.secondchern"><code class="xref py py-meth docutils literal notranslate"><span class="pre">secondchern()</span></code></a></dt><dd><p>Second Chern class of J_r, J_s.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.thirdchern" title="pyCICY.pyCICY.CICY.thirdchern"><code class="xref py py-meth docutils literal notranslate"><span class="pre">thirdchern()</span></code></a></dt><dd><p>Third Chern class of J_r, J_s, J_t.</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">CICY</span><span class="p">(</span><span class="s1">&#39;7833&#39;</span><span class="p">,</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">firstchernvector</span><span class="p">()</span>
+<span class="go">[0,0]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.fourthchern">
+<code class="descname">fourthchern</code><span class="sig-paren">(</span><em>r</em>, <em>s</em>, <em>t</em>, <em>u</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.fourthchern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.fourthchern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the fourth Chern class J_r, J_s, J_t, J_u for Calabi Yau four folds</p>
+<div class="math notranslate nohighlight">
+\[\begin{align}
+c_4^{rstu}  = \frac{1}{4} \bigg[ - \delta^{rstu} (n_r + 1 ) + \sum_{a=1}^{K} q_a^r q_a^s q_a^t q_a^u + 2 c_2^{rs} c_2^{tu} \bigg].
+\end{align}\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>r</strong> (<em>int</em>) – the index of J_r.</p></li>
+<li><p><strong>s</strong> (<em>int</em>) – the index of J_s.</p></li>
+<li><p><strong>t</strong> (<em>int</em>) – the index of J_t.</p></li>
+<li><p><strong>u</strong> (<em>int</em>) – the index of J_u.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>c4</strong> – The fourth Chern class corresponding to J_r, J_s, J_t, J_u.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>Exception</strong> – If the Calabi Yau is smaller than a four fold.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.firstchern" title="pyCICY.pyCICY.CICY.firstchern"><code class="xref py py-meth docutils literal notranslate"><span class="pre">firstchern()</span></code></a></dt><dd><p>First Chern class of J_r.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.secondchern" title="pyCICY.pyCICY.CICY.secondchern"><code class="xref py py-meth docutils literal notranslate"><span class="pre">secondchern()</span></code></a></dt><dd><p>Second Chern class of J_r, J_s.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.thirdchern" title="pyCICY.pyCICY.CICY.thirdchern"><code class="xref py py-meth docutils literal notranslate"><span class="pre">thirdchern()</span></code></a></dt><dd><p>Third Chern class of J_r, J_s, J_t.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.fourthchernall" title="pyCICY.pyCICY.CICY.fourthchernall"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fourthchernall()</span></code></a></dt><dd><p>All fourth Chern classes.</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">CICY</span><span class="p">(</span><span class="s1">&#39;4fold&#39;</span><span class="p">,</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">fourthchern</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">20.25</span>
+</pre></div>
+</div>
+<p class="rubric">References</p>
+<dl class="footnote brackets">
+<dt class="label" id="id2"><span class="brackets">1</span></dt>
+<dd><p>All CICY four-folds, by J. Gray, A. Haupt and A. Lukas.
+<a class="reference external" href="https://arxiv.org/pdf/1303.1832.pdf">https://arxiv.org/pdf/1303.1832.pdf</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.fourthchernall">
+<code class="descname">fourthchernall</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.fourthchernall"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.fourthchernall" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines all fourth Chern classes in a nested list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>matrix</strong> – The full fourth Chern class.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>array[nProj, nProj, nProj, nProj]</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.firstchern" title="pyCICY.pyCICY.CICY.firstchern"><code class="xref py py-meth docutils literal notranslate"><span class="pre">firstchern()</span></code></a></dt><dd><p>First Chern class of J_r.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.secondchern" title="pyCICY.pyCICY.CICY.secondchern"><code class="xref py py-meth docutils literal notranslate"><span class="pre">secondchern()</span></code></a></dt><dd><p>Second Chern class of J_r, J_s.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.thirdchern" title="pyCICY.pyCICY.CICY.thirdchern"><code class="xref py py-meth docutils literal notranslate"><span class="pre">thirdchern()</span></code></a></dt><dd><p>Third Chern class of J_r, J_s, J_t.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.fourthchern" title="pyCICY.pyCICY.CICY.fourthchern"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fourthchern()</span></code></a></dt><dd><p>Foruth Chern class of J_r, J_s, J_t, J_u.</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">CICY</span><span class="p">(</span><span class="s1">&#39;4fold&#39;</span><span class="p">,</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">fourthchernall</span><span class="p">()</span>
+<span class="go">[[[[24.0, 27.0, 18.0], [27.0, 24.75, 18.0], [18.0, 18.0, 10.5]], ... , [[10.5, 11.25, 7.5], [11.25, 10.5, 7.5], [7.5, 7.5, 4.0]]]]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.help">
+<code class="descname">help</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.help"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.help" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints an incomplete list of supported functions into the console.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.hodge_data">
+<code class="descname">hodge_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.hodge_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.hodge_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the hodge numbers of the CICY. Based on Euler and adjunction sequence.
+I checked the results for all three folds against the ones found in the CICYlist.
+The computation of the four fold hodge numbers, however, has only been checked for some selected examples.
+Hence, the results should be taken with care and compared to the literature.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>h</strong> – hodge numbers of the CICY.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>array[nfold+1]</p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>Exception</strong> – Only implemented for 2,3 and 4 folds.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.eulerc" title="pyCICY.pyCICY.CICY.eulerc"><code class="xref py py-meth docutils literal notranslate"><span class="pre">eulerc()</span></code></a></dt><dd><p>Determines the euler characteristic</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">CICY</span><span class="p">(</span><span class="s1">&#39;7833&#39;</span><span class="p">,</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">hodge_data</span><span class="p">()</span>
+<span class="go">[0, 59, 2.0, 0]</span>
+</pre></div>
+</div>
+<p class="rubric">References</p>
+<dl class="footnote brackets">
+<dt class="label" id="id3"><span class="brackets">1</span></dt>
+<dd><p>CY - The Bestiary, T. Hubsch
+<a class="reference external" href="http://inspirehep.net/record/338506?ln=en">http://inspirehep.net/record/338506?ln=en</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.hodge_numbers">
+<code class="descname">hodge_numbers</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.hodge_numbers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.hodge_numbers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints the hodge numbers into the console, only supported for
+2,3,4 folds.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.info">
+<code class="descname">info</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a broad overview of the geometric properties into the console.
+Includes: Configuration matrix, Hodge diamond, triple intersection
+numbers, Chern classes, Euler characteristic and defining
+Polynomials.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.is_directproduct">
+<code class="descname">is_directproduct</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.is_directproduct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.is_directproduct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines if a CICY is a direct product.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>direct</strong> (<em>bool</em>) – True if direct product, else False.</p></li>
+<li><p><strong>product</strong> (<em>list</em>) – If direct == False, contains the components of the direct product and their position,
+else an empty list.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>Exception</strong> – If the configuration matrix contains a mistake.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.is_favourable" title="pyCICY.pyCICY.CICY.is_favourable"><code class="xref py py-meth docutils literal notranslate"><span class="pre">is_favourable()</span></code></a></dt><dd><p>Determines if the CICY is favourable.</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">CICY</span><span class="p">(</span><span class="s1">&#39;7833&#39;</span><span class="p">,</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">is_directproduct</span><span class="p">()</span>
+<span class="go">(False, [])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">D</span> <span class="o">=</span> <span class="n">CICY</span><span class="p">(</span><span class="s1">&#39;TxK3&#39;</span><span class="p">,</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">4</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">D</span><span class="o">.</span><span class="n">is_directproduct</span><span class="p">()</span>
+<span class="go">(True, [[&#39;T&#39;, [0]], [&#39;K3&#39;, [1]]])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.is_favourable">
+<code class="descname">is_favourable</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.is_favourable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.is_favourable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines if the CICY is favourable, i.e.
+h^{1,1} = number of projective spaces.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>self.fav</strong> – True for favourable CICYs, False for non.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.is_directproduct" title="pyCICY.pyCICY.CICY.is_directproduct"><code class="xref py py-meth docutils literal notranslate"><span class="pre">is_directproduct()</span></code></a></dt><dd><p>Determines if the CICY is a direct product.</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">CICY</span><span class="p">(</span><span class="s1">&#39;7833&#39;</span><span class="p">,</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">is_favourable</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.l_slope">
+<code class="descname">l_slope</code><span class="sig-paren">(</span><em>line</em>, <em>dual=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.l_slope"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.l_slope" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the zero slope condition of a line bundle on a favourable CICY</p>
+<div class="math notranslate nohighlight">
+\[\begin{align}
+\mu (L) = c_1^i (L) d_{ijk} t^j t^k = 0 \; .
+\end{align}\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>line</strong> (<em>array</em><em>[</em><em>nProj</em><em>]</em>) – The line bundle L.</p></li>
+<li><p><strong>dual</strong> (<em>bool</em><em>, </em><em>optional</em>) – If true, uses dual coordinates k_i = d_{ijk} t^j t^k, by default False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>slope</strong> (<em>bool</em>) – True, if it can be satisfied somewhere in the Kähler cone.</p></li>
+<li><p><strong>solution</strong> (<em>sympyexpr</em>) – The slope condition.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.line_slope" title="pyCICY.pyCICY.CICY.line_slope"><code class="xref py py-meth docutils literal notranslate"><span class="pre">line_slope()</span></code></a></dt><dd><p>Returns the slope in terms of general charges.</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">CICY</span><span class="p">(</span><span class="s1">&#39;7833&#39;</span><span class="p">,</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">l_slope</span><span class="p">([</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="go">(True, [9.0*t0**2 + 18.0*t0*t1 - 22.0*t1**2])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.line_co">
+<code class="descname">line_co</code><span class="sig-paren">(</span><em>L</em>, <em>space=False</em>, <em>short=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.line_co"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.line_co" title="Permalink to this definition">¶</a></dt>
+<dd><p>The main function of this CICY toolkit. It determines the cohomology of a line bundle over the CY.
+Based on the Leray spectral sequence and Bott-Borel-Weil theorem. Makes use of the index and vanishing theorem
+to shorten computation time.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>L</strong> (<em>array</em><em>[</em><em>nProj</em><em>]</em>) – The line bundle L.</p></li>
+<li><p><strong>space</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True returns the cohomology in term of maps, rather than the dimension, by default False.</p></li>
+<li><p><strong>short</strong> (<em>bool</em><em>, </em><em>optional</em>) – If False, calculates the rank of all maps and does not make use of simplifications, by default True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>hodge</strong> (<em>array[nfold+1]</em>) – hodge numbers of the line bundle L.</p></li>
+<li><p><strong>hspace</strong> (<em>nested list, optional</em>) – If space, then also a nested list of maps is returned.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.line_co_euler" title="pyCICY.pyCICY.CICY.line_co_euler"><code class="xref py py-meth docutils literal notranslate"><span class="pre">line_co_euler()</span></code></a></dt><dd><p>Returns the index of a line bundle</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">CICY</span><span class="p">(</span><span class="s1">&#39;7833&#39;</span><span class="p">,</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">line_co</span><span class="p">([</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="go">[0,46,0,0]</span>
+</pre></div>
+</div>
+<p class="rubric">References</p>
+<dl class="footnote brackets">
+<dt class="label" id="id4"><span class="brackets">1</span></dt>
+<dd><p>CY - The Bestiary, T. Hubsch
+<a class="reference external" href="http://inspirehep.net/record/338506?ln=en">http://inspirehep.net/record/338506?ln=en</a></p>
+</dd>
+<dt class="label" id="id5"><span class="brackets">2</span></dt>
+<dd><p>Heterotic and M-theory Compactifications for String Phenomenology, L. Anderson
+<a class="reference external" href="https://arxiv.org/abs/0808.3621">https://arxiv.org/abs/0808.3621</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.line_co_euler">
+<code class="descname">line_co_euler</code><span class="sig-paren">(</span><em>L</em>, <em>Leray=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.line_co_euler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.line_co_euler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the index of a line bundle L.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>L</strong> (<em>array</em><em>[</em><em>nProj</em><em>]</em>) – The line bundle L as a simple list.</p></li>
+<li><p><strong>Leray</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, uses the Leray table to determine the index, by default False.
+For n=/=3 folds automatically falls back to the Leray table.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>euler</strong> – The index of L.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.line_index" title="pyCICY.pyCICY.CICY.line_index"><code class="xref py py-meth docutils literal notranslate"><span class="pre">line_index()</span></code></a></dt><dd><p>Determines the index in terms of general charges.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.line_co" title="pyCICY.pyCICY.CICY.line_co"><code class="xref py py-meth docutils literal notranslate"><span class="pre">line_co()</span></code></a></dt><dd><p>Determines the line bundle cohomology of L.</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">CICY</span><span class="p">(</span><span class="s1">&#39;7833&#39;</span><span class="p">,</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">line_co_euler</span><span class="p">([</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="go">-46.0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.line_index">
+<code class="descname">line_index</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.line_index"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.line_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the index of a general line bundle in terms of the charges m_i.
+Currently only implemented for three folds, where</p>
+<div class="math notranslate nohighlight">
+\[\begin{align}
+\text{ind}(L) = \sum_{q=0}^{n} (-1)^q h^q(X,L) = \frac{1}{6} d_{rst} m^r m^s m^t + \frac{1}{12} c_2^r m_r \; .
+\end{align}\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>euler</strong> – A polynomial in the line bundle charges</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>sympyexpr</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.line_co_euler" title="pyCICY.pyCICY.CICY.line_co_euler"><code class="xref py py-meth docutils literal notranslate"><span class="pre">line_co_euler()</span></code></a></dt><dd><p>Determines the index of a specific line bundle.</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">CICY</span><span class="p">(</span><span class="s1">&#39;7833&#39;</span><span class="p">,</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">line_index</span><span class="p">()</span>
+<span class="go">1.5*m0**2*m1 + 3.5*m0*m1**2 + 3.0*m0 + 0.333333333333333*m1**3 + 3.66666666666667*m1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.line_slope">
+<code class="descname">line_slope</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.line_slope"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.line_slope" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the slope of a general line bundle over a favourable CY.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>constraint</strong> – Sympyexpression of the slope.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>sympyexpr</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.l_slope" title="pyCICY.pyCICY.CICY.l_slope"><code class="xref py py-meth docutils literal notranslate"><span class="pre">l_slope()</span></code></a></dt><dd><p>The zero slope condition of a line bundle L.</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">CICY</span><span class="p">(</span><span class="s1">&#39;7833&#39;</span><span class="p">,</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">line_slope</span><span class="p">()</span>
+<span class="go">6.0*m0*t0*t1 + 7.0*m0*t1**2 + 3.0*m1*t0**2 + 14.0*m1*t0*t1 + 2.0*m1*t1**2</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.secondchern">
+<code class="descname">secondchern</code><span class="sig-paren">(</span><em>r</em>, <em>s</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.secondchern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.secondchern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the second Chern class corresponding to J_r, J_s, via</p>
+<div class="math notranslate nohighlight">
+\[\begin{align}
+c_2^{rs}  =\frac{1}{2} \bigg[ - \delta^{rs} (n_r + 1 ) + \sum_{a=1}^{K} q_a^r q_a^s \bigg].
+\end{align}\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>r</strong> (<em>int</em>) – the index of J_r.</p></li>
+<li><p><strong>s</strong> (<em>int</em>) – the index of J_s.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>c2</strong> – The second Chern class corresponding to J_r, J_s.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.firstchern" title="pyCICY.pyCICY.CICY.firstchern"><code class="xref py py-meth docutils literal notranslate"><span class="pre">firstchern()</span></code></a></dt><dd><p>First Chern class of J_r.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.secondchernmatrix" title="pyCICY.pyCICY.CICY.secondchernmatrix"><code class="xref py py-meth docutils literal notranslate"><span class="pre">secondchernmatrix()</span></code></a></dt><dd><p>All second Chern classes.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.secondchernvector" title="pyCICY.pyCICY.CICY.secondchernvector"><code class="xref py py-meth docutils literal notranslate"><span class="pre">secondchernvector()</span></code></a></dt><dd><p>Second Chern class as a vector using triple intersection numbers.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.thirdchern" title="pyCICY.pyCICY.CICY.thirdchern"><code class="xref py py-meth docutils literal notranslate"><span class="pre">thirdchern()</span></code></a></dt><dd><p>Third Chern class of J_r, J_s, J_t.</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">CICY</span><span class="p">(</span><span class="s1">&#39;7833&#39;</span><span class="p">,</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">secondchern</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">2.5</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.secondchernmatrix">
+<code class="descname">secondchernmatrix</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.secondchernmatrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.secondchernmatrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines all second Chern classes in a matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>matrix</strong> – The full second Chern class.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>array[nProj, nProj]</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.firstchern" title="pyCICY.pyCICY.CICY.firstchern"><code class="xref py py-meth docutils literal notranslate"><span class="pre">firstchern()</span></code></a></dt><dd><p>First Chern class of J_r.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.secondchern" title="pyCICY.pyCICY.CICY.secondchern"><code class="xref py py-meth docutils literal notranslate"><span class="pre">secondchern()</span></code></a></dt><dd><p>Second Chern class of J_r, J_s.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.secondchernvector" title="pyCICY.pyCICY.CICY.secondchernvector"><code class="xref py py-meth docutils literal notranslate"><span class="pre">secondchernvector()</span></code></a></dt><dd><p>Second Chern class as a vector using triple intersection numbers.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.thirdchern" title="pyCICY.pyCICY.CICY.thirdchern"><code class="xref py py-meth docutils literal notranslate"><span class="pre">thirdchern()</span></code></a></dt><dd><p>Third Chern class of J_r, J_s, J_t.</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">CICY</span><span class="p">(</span><span class="s1">&#39;7833&#39;</span><span class="p">,</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">secondchernmatrix</span><span class="p">()</span>
+<span class="go">[[1.0, 2.5], [2.5, 3.0]]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.secondchernvector">
+<code class="descname">secondchernvector</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.secondchernvector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.secondchernvector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses the triple intersection numbers to contract the second chern matrix to a vector:</p>
+<div class="math notranslate nohighlight">
+\[\begin{align}
+ c_{2;t} = d_{rst} c_2^{rs}.
+\end{align}\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>chern</strong> – The second Chern class as a vector.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>array[nProj]</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.drst" title="pyCICY.pyCICY.CICY.drst"><code class="xref py py-meth docutils literal notranslate"><span class="pre">drst()</span></code></a></dt><dd><p>Determines the triple intersection number d_rst.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.secondchern" title="pyCICY.pyCICY.CICY.secondchern"><code class="xref py py-meth docutils literal notranslate"><span class="pre">secondchern()</span></code></a></dt><dd><p>The second Chern class of J_r, J_s.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.secondchernmatrix" title="pyCICY.pyCICY.CICY.secondchernmatrix"><code class="xref py py-meth docutils literal notranslate"><span class="pre">secondchernmatrix()</span></code></a></dt><dd><p>All second Chern classes.</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">CICY</span><span class="p">(</span><span class="s1">&#39;7833&#39;</span><span class="p">,</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">secondchernvector</span><span class="p">()</span>
+<span class="go">[36.0, 44.0]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.thirdchern">
+<code class="descname">thirdchern</code><span class="sig-paren">(</span><em>r</em>, <em>s</em>, <em>t</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.thirdchern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.thirdchern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the third Chern class corresponding to J_r, J_s, J_t, via</p>
+<div class="math notranslate nohighlight">
+\[\begin{align}
+c_3^{rst}  = \frac{1}{3} \bigg[ \delta^{rst} (n_r + 1 ) - \sum_{a=1}^{K} q_a^r q_a^s q_a^t \bigg].
+\end{align}\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>r</strong> (<em>int</em>) – the index of J_r.</p></li>
+<li><p><strong>s</strong> (<em>int</em>) – the index of J_s.</p></li>
+<li><p><strong>t</strong> (<em>int</em>) – the index of J_t.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>c3</strong> – The third Chern class corresponding to J_r, J_s, J_t.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.firstchern" title="pyCICY.pyCICY.CICY.firstchern"><code class="xref py py-meth docutils literal notranslate"><span class="pre">firstchern()</span></code></a></dt><dd><p>First Chern class of J_r.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.secondchern" title="pyCICY.pyCICY.CICY.secondchern"><code class="xref py py-meth docutils literal notranslate"><span class="pre">secondchern()</span></code></a></dt><dd><p>Second Chern class of J_r, J_s.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.thirdchernarray" title="pyCICY.pyCICY.CICY.thirdchernarray"><code class="xref py py-meth docutils literal notranslate"><span class="pre">thirdchernarray()</span></code></a></dt><dd><p>Complete third Chern class.</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">CICY</span><span class="p">(</span><span class="s1">&#39;7833&#39;</span><span class="p">,</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">thirdchern</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">-3.6666666666666665</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyCICY.pyCICY.CICY.thirdchernarray">
+<code class="descname">thirdchernarray</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#CICY.thirdchernarray"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.CICY.thirdchernarray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines all third Chern classes in a nested list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>matrix</strong> – The full third Chern class.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>array[nProj, nProj, nProj]</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.firstchern" title="pyCICY.pyCICY.CICY.firstchern"><code class="xref py py-meth docutils literal notranslate"><span class="pre">firstchern()</span></code></a></dt><dd><p>First Chern class of J_r.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.secondchern" title="pyCICY.pyCICY.CICY.secondchern"><code class="xref py py-meth docutils literal notranslate"><span class="pre">secondchern()</span></code></a></dt><dd><p>Second Chern class of J_r, J_s.</p>
+</dd>
+<dt><a class="reference internal" href="#pyCICY.pyCICY.CICY.thirdchern" title="pyCICY.pyCICY.CICY.thirdchern"><code class="xref py py-meth docutils literal notranslate"><span class="pre">thirdchern()</span></code></a></dt><dd><p>Third Chern class of J_r, J_s, J_t.</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">M</span> <span class="o">=</span> <span class="n">CICY</span><span class="p">(</span><span class="s1">&#39;7833&#39;</span><span class="p">,</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">M</span><span class="o">.</span><span class="n">thirdchernarray</span><span class="p">()</span>
+<span class="go">[[[-2.0, -2.3333333333333335], [-2.3333333333333335, -3.6666666666666665]], [[-2.3333333333333335, -3.6666666666666665], [-3.6666666666666665, -8.0]]]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="pyCICY.pyCICY.apoly">
+<code class="descclassname">pyCICY.pyCICY.</code><code class="descname">apoly</code><span class="sig-paren">(</span><em>n</em>, <em>deg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyCICY/pyCICY.html#apoly"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyCICY.pyCICY.apoly" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+<div class="section" id="module-pyCICY">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pyCICY" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">pyCICY</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">pyCICY</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">pyCICY package</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="howto.html">How to use pyCICY</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="modules.html">pyCICY</a><ul>
+      <li>Previous: <a href="modules.html" title="previous chapter">pyCICY</a></li>
+      <li>Next: <a href="howto.html" title="next chapter">How to use pyCICY</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Robin Schneider.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/pyCICY.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

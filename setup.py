@@ -4,8 +4,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="CICY",
-    version="1.0",
+    name="pyCICY",
+    version="0.01",
     author="Robin Schneider",
     author_email="robin.schneider@physics.uu.se",
     description="A python CICY toolkit",

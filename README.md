@@ -1,5 +1,11 @@
-# CICY
+# pyCICY
 A python CICY toolkit, which allows the computation of line bundle cohomologies over Complete Intersection Calabi Yau manifolds. It further contains functions for determining various topological quantities, such as Chern classes, triple intersection and Hodge numbers.
+
+Installation is straighforwad with pip
+
+```console
+pip install pyCICY
+```
 
 The module has been developed in the context of the following paper:
 
@@ -44,12 +50,23 @@ It is based on methods developed in
 
 # Quickstart
 We import the CICY object from the module
->>> from CICY import CICY
-Next we define a CICY, for example the tetraquadric
->>> M = CICY('tetra', [[1,2],[1,2],[1,2],[1,2]])
+
+```python
+from pyCICY import CICY
+```
+
+Next we define a CICY, for example the tetraquadric:
+
+```python
+M = CICY('tetra', [[1,2],[1,2],[1,2],[1,2]])
+```
+
 Now we are able to do some calculations, e.g.
->>> M.line_co([1,2,-4,1])
-[2,9,2,9]
+
+```python
+M.line_co([1,2,-4,1])
+```
+
 determines the line bundle cohomologies of the line bundle $\mathcal{O}(1,2,-4,1)$.
 
 

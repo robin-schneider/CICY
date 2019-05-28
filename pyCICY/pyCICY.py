@@ -1,21 +1,22 @@
 """
 Created on Fri Jun 08 16:45:23 2018
 
-A python CICY toolkit. It allows for computation of 
+pyCICY - A python CICY toolkit. It allows for computation of 
 line bundle cohomologies over Complete Intersection
 Calabi Yau manifolds.
 
-Further it includes functions to determine various 
+Further, it includes functions to determine various 
 topological quantities, such as Chern classes, hodge numbers
 and triple intersection numbers.
 
 Authors
 -------
+Magdalena Larfors (magdalena.larfors@physics.uu.se)
 Robin Schneider (robin.schneider@physics.uu.se)
 
 Version
 -------
-0.01 - CICY toolkit made available - 29.5.2019.
+0.01 - pyCICY toolkit made available - 29.5.2019.
 
 """
 
@@ -26,6 +27,7 @@ import sympy as sp
 import random
 from random import randint
 import scipy as sc
+import scipy.special
 import math
 import time
 from texttable import Texttable
@@ -131,8 +133,8 @@ class CICY:
         """
         Prints a broad overview of the geometric properties into the console.
         Includes: Configuration matrix, Hodge diamond, triple intersection
-                    numbers, Chern classes, Euler characteristic and defining
-                    Polynomials.
+        numbers, Chern classes, Euler characteristic and defining
+        Polynomials.
         """
         # make this nice
         if self.nfold == 3:
@@ -231,7 +233,11 @@ class CICY:
     def firstchern(self, r):
         r"""
         Determines the first Chern class corresponding to J_r, via
-        $$c_1^r &= \bigg[ n_r +1 - \sum_{a=1}^{K} q_a^r \bigg].$$
+
+        .. math::
+            \begin{align}
+            c_1^r &= \bigg[ n_r +1 - \sum_{a=1}^{K} q_a^r \bigg].
+            \end{align}
         
         Parameters
         ----------
@@ -285,7 +291,11 @@ class CICY:
     def secondchern(self, r, s):
         r"""
         Determines the second Chern class corresponding to J_r, J_s, via
-        $$c_2^{rs}  =\frac{1}{2} \bigg[ - \delta^{rs} (n_r + 1 ) + \sum_{a=1}^{K} q_a^r q_a^s \bigg].$$
+
+        .. math::
+            \begin{align}
+            c_2^{rs}  =\frac{1}{2} \bigg[ - \delta^{rs} (n_r + 1 ) + \sum_{a=1}^{K} q_a^r q_a^s \bigg].
+            \end{align}
         
         Parameters
         ----------
@@ -349,9 +359,13 @@ class CICY:
     def thirdchern(self,r,s,t):
         r"""
         Determines the third Chern class corresponding to J_r, J_s, J_t, via
-        $$c_3^{rst}  == \frac{1}{3} \bigg[ \delta^{rst} (n_r + 1 ) - \sum_{a=1}^{K} q_a^r q_a^s q_a^t \bigg].$$
+
+        .. math::
+            \begin{align}
+            c_3^{rst}  = \frac{1}{3} \bigg[ \delta^{rst} (n_r + 1 ) - \sum_{a=1}^{K} q_a^r q_a^s q_a^t \bigg].
+            \end{align}
         
-        ParametMers
+        Parameters
         ----------
         r : int
             the index of J_r.
@@ -415,7 +429,11 @@ class CICY:
     def fourthchern(self, r, s, t, u):
         r"""
         Determines the fourth Chern class J_r, J_s, J_t, J_u for Calabi Yau four folds
-        $$c_4^{rstu}  == \frac{1}{4} \bigg[ - \delta^{rstu} (n_r + 1 ) + \sum_{a=1}^{K} q_a^r q_a^s q_a^t q_a^u + 2 c_2^{rs} c_2^{tu} \bigg].$$
+
+        .. math::
+            \begin{align}
+            c_4^{rstu}  = \frac{1}{4} \bigg[ - \delta^{rstu} (n_r + 1 ) + \sum_{a=1}^{K} q_a^r q_a^s q_a^t q_a^u + 2 c_2^{rs} c_2^{tu} \bigg].
+            \end{align}
         
         Parameters
         ----------
@@ -451,10 +469,10 @@ class CICY:
         >>> M.fourthchern(0,1,1,2)
         20.25
 
-        Literature
+        References
         ----------
-        All CICY four-folds, by J. Gray, A. Haupt and A. Lukas.
-        https://arxiv.org/pdf/1303.1832.pdf
+        .. [1] All CICY four-folds, by J. Gray, A. Haupt and A. Lukas.
+            https://arxiv.org/pdf/1303.1832.pdf
         """
 
         if self.nfold == 3 or self.nfold == 2:
@@ -499,9 +517,18 @@ class CICY:
         r"""
         Determines the triple intersection number d_rst.
         We use:
-        $$ d_{rst} = \int_X J_r \wedge J_s \wedge J_t = \int_A \mu \wedge J_r \wedge J_s \wedge J_t $$
-        where $\mu$ is the top form
-        $$\mu = \bigwedge^K_{a=1} \left(  \sum_{p=1}^{m} q_a^p J_p  \right) \; .$$
+
+        .. math::
+            \begin{align}
+             d_{rst} = \int_X J_r \wedge J_s \wedge J_t = \int_A \mu \wedge J_r \wedge J_s \wedge J_t 
+            \end{align}
+
+        where \mu is the top form
+        
+        .. math::
+            \begin{align}
+            \mu = \bigwedge^K_{a=1} \left(  \sum_{p=1}^{m} q_a^p J_p  \right) \; .
+            \end{align}
 
         Parameters
         ----------
@@ -745,9 +772,13 @@ class CICY:
         return d
 
     def secondchernvector(self):
-        """
+        r"""
         Uses the triple intersection numbers to contract the second chern matrix to a vector:
-        $$ c_{2;t} = d_{rst} c_2^{rs}.$$
+
+        .. math::
+            \begin{align}
+             c_{2;t} = d_{rst} c_2^{rs}.
+            \end{align}
         
         Returns
         -------
@@ -814,10 +845,10 @@ class CICY:
         >>> M.drstu(0,1,1,2)
         3
 
-        Literature
+        References
         ----------
-        All CICY four-folds, by J. Gray, A. Haupt and A. Lukas.
-        https://arxiv.org/pdf/1303.1832.pdf
+        .. [1] All CICY four-folds, by J. Gray, A. Haupt and A. Lukas.
+            https://arxiv.org/pdf/1303.1832.pdf
         """
         #if self.nfold != 4:
         #    raise Exception('Only defined for 4 folds.')
@@ -955,7 +986,11 @@ class CICY:
     def eulerc(self):
         r"""
         Determines the Euler characteristic via integration of the Chern class. Take e.g. n=3
-        $$ \chi = \frac{1}{2} \int_X c_3 \; .$$
+
+        .. math::
+            \begin{align}
+             \chi = \frac{1}{2} \int_X c_3 \; .
+            \end{align}
         
         Returns
         -------
@@ -1219,14 +1254,16 @@ class CICY:
 
     def Leray(self, V, line=True):
         r"""
-        Determines the first instance, i=1, of a Leray table for a given line bundle L.
-        \begin{align}
-	    E_{i+1}^{j,k} = \frac{\text{Ker}(d_i : E_{i}^{j,k} (\mathcal{L}) \rightarrow E_i^{j-1,k-1}(\mathcal{L}) )}{\text{Im}(d_i : E_{i}^{j+i-1,k+i} (\mathcal{L}) \rightarrow E_i^{j,k}(\mathcal{L}) )}
-	    \end{align}
-        L has to be in proper BBW notation, e.g.
-        (1|000) or (-2|000)  ...
-        (0|000)    (-1|0)
-        This, is most easily achieved, by taking e.g. a line bundle L = [q_1 , ... ,q_n] and
+        Determines the first instance, i=1, of a Leray table for a given vector bundle V.
+
+        .. math::
+
+            \begin{align}
+	        E_{i+1}^{j,k} = \frac{\text{Ker}(d_i : E_{i}^{j,k} (\mathcal{V}) \rightarrow E_i^{j-1,k-1}(\mathcal{V}) )}{\text{Im}(d_i : E_{i}^{j+i-1,k+i} (\mathcal{V}) \rightarrow E_i^{j,k}(\mathcal{V}) )}
+	        \end{align}
+        
+        V has to be in proper BBW notation, this is most easily achieved, by taking e.g. a line bundle L = [q_1 , ... ,q_n] and
+
         >>> V = M._line_to_BBW(L)
 
         Parameters
@@ -1422,10 +1459,10 @@ class CICY:
         >>> M.hodge_data()
         [0, 59, 2.0, 0]
 
-        Literature
+        References
         ----------
-        CY - The Bestiary, T. Hubsch
-        http://inspirehep.net/record/338506?ln=en
+        .. [1] CY - The Bestiary, T. Hubsch
+            http://inspirehep.net/record/338506?ln=en
         """
         h = [0 for i in range(self.nfold+1)]
         if self.nfold == 3:
@@ -1596,8 +1633,6 @@ class CICY:
         >>> M = CICY('7833', [[2,2,1],[3,1,3]])
         >>> M.is_directproduct()
         (False, []) 
-
-        Let us consider a manifold, which is a direct product:
         >>> D = CICY('TxK3', [[2,3,0],[3,0,4]])
         >>> D.is_directproduct()
         (True, [['T', [0]], ['K3', [1]]])
@@ -1924,9 +1959,11 @@ class CICY:
         r"""
         Determines the index of a general line bundle in terms of the charges m_i.
         Currently only implemented for three folds, where
-        \begin{align}
-    	\ind(L) = \sum_{q=0}^{n} (-1)^q h^q(X,L) = \frac{1}{6} d_{rst} m^r m^s m^t + \frac{1}{12} c_2^r m_r \; .
-	    \end{align}
+
+        .. math::
+            \begin{align}
+            \text{ind}(L) = \sum_{q=0}^{n} (-1)^q h^q(X,L) = \frac{1}{6} d_{rst} m^r m^s m^t + \frac{1}{12} c_2^r m_r \; .
+            \end{align}
         
         Returns
         -------
@@ -2056,16 +2093,18 @@ class CICY:
     def l_slope(self, line, dual=False):
         r"""
         Determines the zero slope condition of a line bundle on a favourable CICY
-        \begin{align}
-        \mu (L) = c_1^i (L) d_{ijk} t^j t^k = 0 \; .
-        \end{align}
+
+        .. math::
+            \begin{align}
+            \mu (L) = c_1^i (L) d_{ijk} t^j t^k = 0 \; .
+            \end{align}
         
         Parameters
         ----------
         line : array[nProj]
             The line bundle L.
         dual : bool, optional
-            If true, uses dual coordinates $k_i = d_{ijk} t^j t^k$, by default False.
+            If true, uses dual coordinates k_i = d_{ijk} t^j t^k, by default False.
         
         Returns
         -------
@@ -2199,13 +2238,13 @@ class CICY:
         >>> M.line_co([-4,3])
         [0,46,0,0]
 
-        Literature
+        References
         ----------
-        CY - The Bestiary, T. Hubsch
-        http://inspirehep.net/record/338506?ln=en
+        .. [1] CY - The Bestiary, T. Hubsch
+            http://inspirehep.net/record/338506?ln=en
 
-        Heterotic and M-theory Compactifications for String Phenomenology, L. Anderson
-        https://arxiv.org/abs/0808.3621
+        .. [2] Heterotic and M-theory Compactifications for String Phenomenology, L. Anderson
+            https://arxiv.org/abs/0808.3621
         """
         # Build our Leray tableaux E_1[k][j]
         start = time.time()
