@@ -16,10 +16,10 @@ setuptools.setup(
     classifiers=[
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
-        "LICENSE :: OSI APPROVED :: GNU GENERAL PUBLIC LICENSE V3 (GPLV3)",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
-        "TOPIC :: SCIENTIFIC/ENGINEERING :: MATHEMATICS",
-        "TOPIC :: SCIENTIFIC/ENGINEERING :: PHYSICS",
+        "Topic :: Scientific/Engineering :: Mathematics",
+        "Topic :: Scientific/Engineering :: Physics",
     ],
     install_requires=[
         "numpy",
