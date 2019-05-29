@@ -67,8 +67,11 @@ Now we are able to do some calculations, e.g.
 M.line_co([1,2,-4,1])
 ```
 
-determines the line bundle cohomologies of the line bundle [$]\mathcal{O}(1,2,-4,1)[\$].
+determines the line bundle cohomologies of the line bundle $ \mathcal{L} = \mathcal{O}(1,2,-4,1) $.
 
+# Documentation
+
+Documentation can be found on readthedocs [pyCICY](https://pycicy.readthedocs.io/en/latest/).
 
 # Changelog
 
@@ -76,4 +79,4 @@ v0.01 - pyCICY toolkit made available - 29.5.2019.
 
 # Useful software
 
-pyCICY is backwards compatible with python 2.7. Hence, it can be used in [Sage](http://www.sagemath.org/). Other useful packages for dealing with Calabi Yau manifolds in toric varieties are [cohomCalg](https://github.com/BenjaminJurke/cohomCalg/) and [PALP](http://hep.itp.tuwien.ac.at/~kreuzer/CY/CYpalp.html).
+The pyCICY module is backwards compatible with python 2.7. Hence, it can be used in [Sage](http://www.sagemath.org/). Other useful packages for dealing with Calabi Yau manifolds in toric varieties are [cohomCalg](https://github.com/BenjaminJurke/cohomCalg/) and [PALP](http://hep.itp.tuwien.ac.at/~kreuzer/CY/CYpalp.html).
