@@ -13,9 +13,9 @@
 import os
 import sys
 
-src_dir = os.path.abspath("..")
-sys.path.insert(0, src_dir)
-sys.path.insert(0, src_dir + "/pyCICY")
+path = os.path.join(__file__, "../..")
+path = os.path.abspath(path)
+sys.path.insert(0, path)
 
 
 # -- Project information -----------------------------------------------------
