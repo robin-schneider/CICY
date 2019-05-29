@@ -6,7 +6,7 @@ line bundle cohomologies over Complete Intersection
 Calabi Yau manifolds.
 
 Further, it includes functions to determine various 
-topological quantities, such as Chern classes, hodge numbers
+topological quantities, such as Chern classes, Hodge numbers
 and triple intersection numbers.
 
 Authors
@@ -16,7 +16,7 @@ Robin Schneider (robin.schneider@physics.uu.se)
 
 Version
 -------
-0.01 - pyCICY toolkit made available - 29.5.2019.
+v0.01 - pyCICY toolkit made available - 29.5.2019.
 
 """
 

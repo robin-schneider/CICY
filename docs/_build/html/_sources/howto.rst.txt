@@ -23,7 +23,7 @@ Calculating line bundle cohomologies is done via
 >>> M.line_co([-3,4])
 [0, 87, 0, 0]
 
-the toolkit also includes various other functions an incomplete overview can be obtained via
+the toolkit also includes various other functions. An incomplete overview is given by
 
 >>> M.help()
 ...

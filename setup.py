@@ -18,6 +18,8 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
         "LICENSE :: OSI APPROVED :: GNU GENERAL PUBLIC LICENSE V3 (GPLV3)",
         "Operating System :: OS Independent",
+        "TOPIC :: SCIENTIFIC/ENGINEERING :: MATHEMATICS",
+        "TOPIC :: SCIENTIFIC/ENGINEERING :: PHYSICS",
     ],
     install_requires=[
         "numpy",
