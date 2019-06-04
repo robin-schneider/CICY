@@ -10,14 +10,16 @@ pip install pyCICY
 The module has been developed in the context of the following paper:
 
 ```tex
-@article{Larfors:2019xxx,
-	author         = "Larfors, Magdalena and Schneider, Robin",
-	title          = "{Line bundle cohomologies on CICYs with Picard number two}",
-	year           = "2019",
-	eprint         = "1905.XXXXX",
-	archivePrefix  = "arXiv",
-	primaryClass   = "hep-th",
-	SLACcitation   = "%%CITATION = ARXIV:1905.XXXXX;%%"
+@article{Larfors:2019sie,
+      author         = "Larfors, Magdalena and Schneider, Robin",
+      title          = "{Line bundle cohomologies on CICYs with Picard number
+                        two}",
+      year           = "2019",
+      eprint         = "1906.00392",
+      archivePrefix  = "arXiv",
+      primaryClass   = "hep-th",
+      reportNumber   = "UUITP-18/19",
+      SLACcitation   = "%%CITATION = ARXIV:1906.00392;%%"
 }
 ````
 
@@ -67,7 +69,7 @@ Now we are able to do some calculations, e.g.
 M.line_co([1,2,-4,1])
 ```
 
-determines the line bundle cohomologies of the line bundle $ \mathcal{L} = \mathcal{O}(1,2,-4,1) $.
+determines the line bundle cohomologies of the line bundle L = O(1,2,-4,1).
 
 # Documentation
 
