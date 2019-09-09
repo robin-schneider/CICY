@@ -1090,7 +1090,7 @@ class CICY:
         save = [0 for i in range(len(V))]
         # Next we run over V and sort it according to BBW
         # essentially bubblesort?
-        for m in range(len(V)-1):
+        for _ in range(len(V)-1):
             for n in range(len(V)-1):
                 # if two entries are the same -> return zero
                 if vector[n] == vector[n+1]:
@@ -2275,8 +2275,8 @@ class CICY:
         # variables for the image
         images = sp.symbols('f0:'+str(self.K+2), integer=True)
         euler = 0
-        for k in range(self.K+1):
-            for j in range(self.dimA+1):
+        for k in range(len(Table1)):
+            for j in range(len(Table1[k])):
                 if Table1[k][j] != 0:
                     dimension = sum([self._brackets_dim(Table1[k][j][a]) for a in range(len(Table1[k][j]))]) 
                     euler += (-1)**(k+j)*dimension
@@ -2286,6 +2286,10 @@ class CICY:
                         if Table1[k+1][j] != 0:
                             E2[k][j] -= images[k+1]
                             spacetable[k][j] += [Table1[k+1][j],Table1[k][j], False]
+                        if Table1[-1][j+1] != 0:
+                            # rare case for at least one zero in the charges
+                            E2[k][j] -= sum([self._brackets_dim(Table1[-1][j+1][a]) for a in range(len(Table1[-1][j+1]))])
+                            #spacetable[k][j] += [Table1[0][j-1],Table1[k][j], False]
                     else:
                         if Table1[k-1][j] != 0:
                             valj = j
