@@ -119,6 +119,7 @@ class CICY:
                 self.fav = True
 
         self.doc = doc
+        self.c2t = self.secondchernmatrix()
 
         end = time.time()
         if self.doc:
@@ -1993,7 +1994,7 @@ class CICY:
                             euler += self.quadruple[r][s][t]*(1/6*L[r]*L[s]*L[t]*L[u]+1/12*L[r]*self.thirdchern(s,t,u))
             return euler"""        
 
-    def line_co_euler(self, L, Leray=False):
+    def line_co_euler(self, L, Leray=False, quick=True):
         r"""
         Determines the index of a line bundle L.
         
@@ -2004,6 +2005,9 @@ class CICY:
         Leray : bool, optional
             If True, uses the Leray table to determine the index, by default False.
             For n=/=3 folds automatically falls back to the Leray table.
+        quick: bool, optional
+            Uses numpy tensor manipulation and is by far the 
+            quickest version.
         
         Returns
         -------
@@ -2021,8 +2025,16 @@ class CICY:
         >>> M.line_co_euler([-4,3])
         -46.0
         """
-        start = time.time()
         # using Chern classes
+        if quick:
+            line_tensor = 1/6*np.einsum('i,j,k -> ijk', L, L, L)
+            chern_tensor = 1/12*np.einsum('i, jk -> ijk', L, self.c2t)
+            t = np.add(line_tensor, chern_tensor)
+            return np.einsum('rst, rst', self.triple, t)
+        
+        if self.doc:
+            start = time.time()
+
         if not Leray:
             if self.nfold == 3:
                 euler = 0
