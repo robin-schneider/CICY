@@ -285,7 +285,7 @@ class CICY:
         >>> M.firstchernvector()
         [0,0]
         """
-        vector = [self.firstchern(i) for i in range(self.len)]
+        vector = np.array([self.firstchern(i) for i in range(self.len)])
         return vector
 
     def secondchern(self, r, s):
@@ -353,7 +353,7 @@ class CICY:
         >>> M.secondchernmatrix()
         [[1.0, 2.5], [2.5, 3.0]]
         """
-        matrix = [[self.secondchern(i,j) for j in range(self.len)] for i in range(self.len)]
+        matrix = np.array([[self.secondchern(i,j) for j in range(self.len)] for i in range(self.len)])
         return matrix
 
     def thirdchern(self,r,s,t):
@@ -423,7 +423,7 @@ class CICY:
         >>> M.thirdchernarray()
         [[[-2.0, -2.3333333333333335], [-2.3333333333333335, -3.6666666666666665]], [[-2.3333333333333335, -3.6666666666666665], [-3.6666666666666665, -8.0]]]
         """
-        matrix = [[[self.thirdchern(i,j,k) for k in range(self.len)] for j in range(self.len)] for i in range(self.len)]
+        matrix = np.array([[[self.thirdchern(i,j,k) for k in range(self.len)] for j in range(self.len)] for i in range(self.len)])
         return matrix
 
     def fourthchern(self, r, s, t, u):
@@ -509,8 +509,8 @@ class CICY:
         >>> M.fourthchernall()
         [[[[24.0, 27.0, 18.0], [27.0, 24.75, 18.0], [18.0, 18.0, 10.5]], ... , [[10.5, 11.25, 7.5], [11.25, 10.5, 7.5], [7.5, 7.5, 4.0]]]]
         """
-        matrix = [[[[self.fourthchern(i,j,k,l) for l in range(self.len)]
-                     for k in range(self.len)] for j in range(self.len)] for i in range(self.len)]
+        matrix = np.array([[[[self.fourthchern(i,j,k,l) for l in range(self.len)]
+                     for k in range(self.len)] for j in range(self.len)] for i in range(self.len)])
         return matrix
 
     def drst(self,r,s,t,x=1):
@@ -710,10 +710,10 @@ class CICY:
             #There are some improvements here:
             #1) take the counts -= 1 if fixed and compare if the left allowed
             #2) here it would be even more efficient to write a product that respects 
-            #   the allowed combinations from count, but I can't be bothered to do it atm.
+            #   the allowed combinations from count.
             mu = itertools.product(*nonzero)
             # len(nonzero[0])*...*len(nonzero[K])
-            # since we in principle know the complexity here and from the other
+            # since we in principle know the complexity of both calculations
             # one could also do all the stuff before and then decide which way is faster
             for a in mu:
                 # if allowed by count
@@ -797,13 +797,8 @@ class CICY:
         >>> M.secondchernvector()
         [36.0, 44.0]
         """
-        chern=[0 for j in range(self.len)]
-        d = self.drstmatrix()
-        for i in range(self.len):
-            for j in range(self.len):
-                for k in range(self.len):
-                    #chern[i] += self.drst(i,j,k,1)*self.secondchern(j,k)
-                    chern[i] += d[i][j][k]*self.secondchern(j,k)
+        c2 = self.secondchernmatrix()
+        chern = np.einsum('rst,st -> r', self.triple, c2)
         return chern
 
     def drstu(self,r,s,t,u,x=1):
@@ -1015,18 +1010,12 @@ class CICY:
         e = 0
         if self.nfold == 3:
             d = self.drstmatrix()
-            for k in range(0,self.len):
-                for j in range(0,self.len):
-                    for i in range(0,self.len):
-                        #e += self.drst(i,j,k,self.thirdchern(i,j,k))
-                        e += d[i][j][k]*self.thirdchern(i,j,k)
+            c3 = self.thirdchernarray()
+            e =  np.einsum('rst,rst', d, c3)
         elif self.nfold == 4:
             d = self.drstumatrix()
-            for k in range(0,self.len):
-                for j in range(0,self.len):
-                    for i in range(0,self.len):
-                        for l in range(0, self.len):
-                            e += d[i][j][k][l]*self.fourthchern(i,j,k,l)
+            c4 = self.fourthchernall()
+            e =  np.einsum('rstu,rstu', d, c4)
         elif self.nfold == 2:
             e = 24
         self.euler = e
@@ -2000,7 +1989,7 @@ class CICY:
                 for s in range(self.len):
                     for t in range(self.len):
                         for u in range(self.len):
-                            # check the prefactos and such
+                            # check the prefactors and such
                             euler += self.quadruple[r][s][t]*(1/6*L[r]*L[s]*L[t]*L[u]+1/12*L[r]*self.thirdchern(s,t,u))
             return euler"""        
 
