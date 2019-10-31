@@ -445,11 +445,6 @@ class CICY:
         c4: float
             The fourth Chern class corresponding to J_r, J_s, J_t, J_u.
 
-        Raises
-        ------
-        Exception
-            If the Calabi Yau is smaller than a four fold.
-
         See Also
         --------
         c1: First Chern class of J_r.
@@ -1608,11 +1603,6 @@ class CICY:
         product: list
             If direct == False, contains the components of the direct product and their position,
             else an empty list.
-        
-        Raises
-        ------
-        Exception
-            If the configuration matrix contains a mistake.
 
         See also
         --------
@@ -1642,14 +1632,14 @@ class CICY:
                         if self.M[i][0] == 2:
                             product += [['T', [x]]]
                         else:
-                            raise Exception('There must be a mistake in the configuration matrix: '+str([i,x]))
+                            logging.warning('Configuration matrix is not Calabi Yau: '+str([i,x]))
                     if trans[x][i] == 2:
                         direct = False
                         # redundant or wrong CICY
                         if self.M[i][0] == 1:
-                            raise Exception('The CICY is redundant here: '+str([i,x]))
+                            logging.warning('The CICY is redundant here: '+str([i,x]))
                         else:
-                            raise Exception('There must be a mistake in the configuration matrix: '+str([i,x]))
+                            logging.warning('Configuration matrix is not Calabi Yau: '+str([i,x]))
                     if trans[x][i] == 4:
                         # K3
                         if self.M[i][0] == 3:
@@ -1658,7 +1648,7 @@ class CICY:
                             if self.nfold == 3:
                                 return direct, product
                         else:
-                            raise Exception('There must be a mistake in the configuration matrix: '+str([i,x]))
+                            logging.warning('Configuration matrix is not Calabi Yau: '+str([i,x]))
                     if trans[x][i] == 5:
                         # Quintic
                         if self.M[i][0] == 4:
@@ -1671,7 +1661,7 @@ class CICY:
                                 logging.warning('Are you the Quintic?')
                                 return direct, product
                         else:
-                            raise Exception('There must be a mistake in the configuration matrix: '+str([i,x]))
+                            logging.warning('Configuration matrix is not Calabi Yau: '+str([i,x]))
         """
         possible time efficiency improvement here
         # first we check if we found any products, then we should investigate the other factor
