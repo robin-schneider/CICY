@@ -16,6 +16,8 @@ Robin Schneider (robin.schneider@physics.uu.se)
 
 Version
 -------
+v0.02 - Major overhaul. Bug fixes, more numpy,
+        some efficiency upgrade, additional functions - 4.11.2019.
 v0.01 - pyCICY toolkit made available - 29.5.2019.
 
 """
@@ -32,53 +34,62 @@ import math
 import time
 from texttable import Texttable
 import os
+# for documentation
+import logging
 
 
 class CICY:
 
-    def __init__(self, name, conf, doc=False, dir='~/Documents/data/CICY/'):
+    def __init__(self, conf, log=3, name='', dir='~/Documents/data/CICY/'):
         """
-        The CICY class. Allows for computation of various topological quantities.
+        The CICY class. It allows for computation of various topological quantities.
         Main function is the computation of line bundle cohomologies.
         
         Parameters
         ----------
-        name : str
-            Internal name of the CICY object; only used for debugging.
         conf : array[nProj, K+1]
             The CICY configuration matrix, including the first col for the
             projective spaces.
-        doc : bool, optional
-            Turns the documentation on, which prints calculation into the console
-            , by default False.
+        log : int, optional
+            Documentation level. 1 - DEBUG, 2 - INFO, 3 -Warning, by default 3.
+        name : str, optional
+            Internal name of the CICY object; only used for debugging, default ''
         dir : str, optional
             path name for file save during debugging, by default '~/Documents/data/CICY/'.
-        
-        Raises
-        ------
-        Exception
-            If the configuration matrix is not Calabai Yau.
 
         Examples
         --------
         The famous quintic:
 
-        >>> Q = CICY('quintic', [[4,5]])
+        >>> Q = CICY([[4,5]])
 
         or the tetra quadric:
 
-        >>> T = CICY('tetra', [[1,2],[1,2],[1,2],[1,2]])
+        >>> T = CICY([[1,2],[1,2],[1,2],[1,2]])
 
         or the manifold #7833 of the CICYlist:
 
-        >>> M = CICY('7833', [[2,2,1],[3,1,3]])
+        >>> M = CICY([[2,2,1],[3,1,3]])
         """
         start = time.time()
-        self.doc = False
-        self.debug = False
 
+
+        if log == 1:
+            level = logging.DEBUG
+        elif log == 2:
+            level = logging.INFO
+        elif log == 3:
+            level = logging.WARNING
+
+        logging.basicConfig(format='%(levelname)s:%(message)s', level=level)
+
+        # needs to be defined in the beginning
+        self.debug = False
+        # controls that no logging is done for init
+        self.doc = False
+        
         # define some variables which will make our life easier
-        self.M = conf
+        self.M = np.array(conf, dtype=np.int16)
         self.len = len(conf) # = #projective spaces
         self.K = len(conf[0])-1 # = #hyper surfaces
         self.dimA = sum([self.M[i][0] for i in range(self.len)])
@@ -86,24 +97,27 @@ class CICY:
         self.N = np.array([[self.M[i][j] for j in range(1, self.K+1)] for i in range(self.len)])
 
         # check if actually CICY
-        fc = self.firstchernvector()
-        if not np.array_equal(fc, np.zeros(self.len)):
-            raise Exception('The configuration matrix does not belong to a Calabi Yau. '+
-                    'Its first Chern class is {}'.format(fc))
+        if not np.array_equal(self.first_chern(), np.zeros(self.len)):
+            self.CY = False
+            logging.warning('The configuration matrix does not belong to a Calabi Yau. '+
+                    'Its first Chern class is {}.'.format(self.first_chern()))
+            logging.warning('There is no official support for more general hypersurfaces.')
+        else:
+            self.CY = True
 
         #some topological quantities, which we only want to calculate once
-        self.euler = 'not defined' 
-        self.triple = 'not defined'
-        self.quadruple = 'not defined'
+        self.euler = 1 #set to 1 since all CICYs have negative.
+        self.triple = np.array([])
+        self.quadruple = np.array([])
         # need to define before hodge
         self.fav = False
         # defining normal bundle sections
         self.pmoduli, self.moduli = self._fill_moduli(9) 
         
         self.h = self.hodge_data()
-        #'not defined'
 
-        # check if favourable, since needed for theorems in line_co
+        # check if favourable, since needed for vanishing
+        # theorem in line_co.
         if self.nfold == 3:
             if self.h[2] == self.len:
                 self.fav = True
@@ -114,20 +128,17 @@ class CICY:
                 self.fav = True
             else:
                 self.fav = False
-        elif self.nfold == 2:
-            if self.len == 20:
-                self.fav = True
 
-        self.doc = doc
-        self.c2t = self.secondchernmatrix()
+        # needed for quick calculations of index
+        self.c2_tensor = self.second_chern_all()
 
         end = time.time()
-        if self.doc:
-            print('Initialization took:', end-start)
-
-        # artifacts from debugging; might be useful if you want to change some code
+        logging.info('Initialization took: {}.'.format(end-start))
+        self.doc = True
+        # artifacts from debugging; 
+        # might be useful if you want to change some code
         self.name = name
-        self.directory = os.path.expanduser(dir)+self.name+'/'
+        self.directory = os.path.join(os.path.expanduser(dir), self.name)
         self.debug = False
 
     def info(self):
@@ -137,54 +148,22 @@ class CICY:
         numbers, Chern classes, Euler characteristic and defining
         Polynomials.
         """
-        # make this nice
-        if self.nfold == 3:
-            print(self.name, 'has the following configuration matrix:')
-            print(self.M)
-            print('Its Hodge numbers are')
-            print(self.hodge_numbers())
-            print('The triple intersetion numbers are')
-            print(self.drstmatrix())
-            print('and thus the second Chern class can be expressed as')
-            print(self.secondchernvector())
-            print('The euler characteristic is')
-            print(self.eulerc())
-            print('The defining polynomials have been choosen to be')
-            print(self.def_poly())
+        if self.nfold == 2:
+            print('K3.')
+        elif self.nfold == 3:
+            print('The CICY {}'.format(self.M))
+            print('has Hodge numbers {}.'.format(self.hodge_numbers()))
+            print('Its triple intersetion numbers are \n {}.'.format(self.triple_intersection()))
+            print('The second Chern class is {}.'.format(self.second_chern()))
+            print('The euler characteristic is {}'.format(self.euler_characteristic()))
+            print('Finally, its defining polynomials have been choosen to be \n {}.'.format(self.def_poly()))
         elif self.nfold == 4:
-            print(self.name, 'has the following configuration matrix:')
-            print(self.M)
-            print('Its Hodge numbers are')
-            print(self.hodge_numbers())
-            print('The quadruple intersetion numbers are')
-            print(self.drstumatrix())
-            print('The euler characteristic is')
-            print(self.eulerc())
-            print('The defining polynomials have been choosen to be')
-            print(self.def_poly())
-
-    def help(self):
-        """
-        Prints an incomplete list of supported functions into the console.
-        """
-        print('Currently the following functions are supported:')
-        print('info() - for an overview of geometric data.')
-        print('hodge_numbers() - for printing out the hodge numbers.')
-        print('def_poly() -  returns the defining polynomials.')
-        print('secondchernvector() - returns the second Chern class as a vector.')
-        print('thirdchernarray() - returns the third Chern class as a nested list.')
-        print('fourthchernall() - returns the fourth Chern class as a nested list.')
-        print('drst(r,s,t) - returns a single triple intersection number.')
-        print('drstu(r,s,t,u) - returns a single quadruple intersection number.')
-        print('drstmatrix() - returns all triple intersection numbers as a nested list.')
-        print('drstumatrix() - returns all quadruple intersection numbers as a nested list.')
-        print('eulerc() - returns the Euler characteristic.')
-        print('hodge_data() - determines the hodge data.')
-        print('line_co_euler(L) - returns the euler characteristic of a l.b. L over X.')
-        print('line_co(L) - returns the l.b. cohom. of L over X.')
-        print('l_slope(L) - returns whether an l.b. L is stable and the constraint as a tuple.')
-        print('is_directproduct() - determines whether M is a direct product or not.')
-        print('is_favourable() - returns if favourable or not.')
+            print('The CICY {}'.format(self.M))
+            print('has Hodge numbers {}.'.format(self.hodge_numbers()))
+            print('Itsquadruple intersetion numbers are \n {}.'.format(self.quadruple_intersection()))
+            print('The second Chern class is {}.'.format(self.second_chern()))
+            print('The euler characteristic is {}'.format(self.euler_characteristic()))
+            print('Finally, its defining polynomials have been choosen to be \n {}.'.format(self.def_poly()))
 
     def hodge_numbers(self):
         """
@@ -203,7 +182,7 @@ class CICY:
             print('h^{3,1} = '+str(self.h[1]))
 
     def def_poly(self):
-        """
+        r"""
         Returns the defining polynomials with (redundant) complex moduli as coefficients.
         
         Returns
@@ -213,11 +192,11 @@ class CICY:
 
         Example
         -------
-        >>> M = CICY('quintic', [[4,5]])
+        >>> M = CICY([[4,5]])
         >>> M.def_poly()
         [45*x0**5 + 50*x0**4*x1 + ... + 40*x3*x4**4 + 30*x4**5]
         """
-        normal = [0 for i in range(self.K)]
+        normal = [0 for _ in range(self.K)]
         projx = sp.symbols('x0:'+str(self.dimA+self.len), integer=True)
         # run over all normal bundle sections
         for i in range(self.K):
@@ -231,7 +210,7 @@ class CICY:
                 normal[i] += tmp
         return normal
 
-    def firstchern(self, r):
+    def c1(self, r):
         r"""
         Determines the first Chern class corresponding to J_r, via
 
@@ -252,44 +231,49 @@ class CICY:
 
         See Also
         --------
-        firstchernvector: All first Chern classes.
-        secondchern: Second Chern class of J_r, J_s.
-        thirdchern: Third Chern class of J_r, J_s, J_t.
+        c1: All first Chern classes.
+        c2: Second Chern class of J_r, J_s.
+        c3: Third Chern class of J_r, J_s, J_t.
 
         Example
         -------
-        >>> M = CICY('7833', [[2,2,1],[3,1,3]])
-        >>> M.firstchern(0)
+        >>> M = CICY([[2,2,1],[3,1,3]])
+        >>> M.c1(0)
         0
         """
-        c1 = self.M[r][0]+1-sum(self.M[r][1:])
+        c1 = self.M[r][0]+1-np.sum(self.M[r,1:])
         return c1
 
-    def firstchernvector(self):
-        """
-        Determines the full first Chern class.
+    def first_chern(self):
+        r"""
+        Determines c_1(M).
+
+        .. math::
+            \begin{align}
+            c_1^r &= \bigg[ n_r +1 - \sum_{a=1}^{K} q_a^r \bigg].
+            \end{align}
         
         Returns
         -------
         vector: array[nProj]
-            The full firt Chern class for all J_r.
+            First Chern class of M.
 
         See Also
         --------
-        firstchern: First Chern class of J_r.
-        secondchern: Second Chern class of J_r, J_s.
-        thirdchern: Third Chern class of J_r, J_s, J_t.
+        second_chern: Second Chern class.
+        third_chern: Third Chern class.
+        fourth_chern: Fourth Chern class.
 
         Example
         -------
-        >>> M = CICY('7833', [[2,2,1],[3,1,3]])
-        >>> M.firstchernvector()
+        >>> M = CICY([[2,2,1],[3,1,3]])
+        >>> M.first_chern()
         [0,0]
         """
-        vector = np.array([self.firstchern(i) for i in range(self.len)])
+        vector = np.array([self.c1(i) for i in range(self.len)])
         return vector
 
-    def secondchern(self, r, s):
+    def c2(self, r, s):
         r"""
         Determines the second Chern class corresponding to J_r, J_s, via
 
@@ -312,29 +296,34 @@ class CICY:
 
         See Also
         --------
-        firstchern: First Chern class of J_r.
-        secondchernmatrix: All second Chern classes.
-        secondchernvector: Second Chern class as a vector using triple intersection numbers.
-        thirdchern: Third Chern class of J_r, J_s, J_t.
+        c1: First Chern class of J_r.
+        c2: Second Chern class in vector notation.
+        c3: Third Chern class of J_r, J_s, J_t.
 
         Example
         -------
-        >>> M = CICY('7833', [[2,2,1],[3,1,3]])
-        >>> M.secondchern(0,1)
+        >>> M = CICY([[2,2,1],[3,1,3]])
+        >>> M.c2(0,1)
         2.5
         """
-        sumqq = sum([self.M[r][i]*self.M[s][i] for i in range(1,self.K+1)])
+        sumqq = np.sum([self.M[r][i]*self.M[s][i] for i in range(1,self.K+1)])
         if r==s:
             delta = self.M[r][0]+1
         else:
             delta = 0
         c2 =(sumqq-delta)/2 #Calabi-Yau
-        #c2 = ((sumqq-delta)+(firstchern(M,r)*firstchern(M,s)))/2 #non Calabi-Yau
+        if not self.CY:
+            c2 += self.c1(r)*self.c1(s)/2 #non Calabi-Yau
         return c2
 
-    def secondchernmatrix(self):
-        """
-        Determines all second Chern classes in a matrix.
+    def second_chern_all(self):
+        r"""
+        Determines all second Chern classes.
+
+        .. math::
+            \begin{align}
+            c_2^{rs}  =\frac{1}{2} \bigg[ - \delta^{rs} (n_r + 1 ) + \sum_{a=1}^{K} q_a^r q_a^s \bigg].
+            \end{align}
         
         Returns
         -------
@@ -343,21 +332,20 @@ class CICY:
 
         See Also
         --------
-        firstchern: First Chern class of J_r.
-        secondchern: Second Chern class of J_r, J_s.
-        secondchernvector: Second Chern class as a vector using triple intersection numbers.
-        thirdchern: Third Chern class of J_r, J_s, J_t.
+        first_chern: First Chern class.
+        second_chern: Second Chern class in vector notation.
+        third_chern: Third Chern class.
 
         Example
         -------
-        >>> M = CICY('7833', [[2,2,1],[3,1,3]])
-        >>> M.secondchernmatrix()
+        >>> M = CICY([[2,2,1],[3,1,3]])
+        >>> M.second_chern_all()
         [[1.0, 2.5], [2.5, 3.0]]
         """
-        matrix = np.array([[self.secondchern(i,j) for j in range(self.len)] for i in range(self.len)])
+        matrix = np.array([[self.c2(i,j) for j in range(self.len)] for i in range(self.len)])
         return matrix
 
-    def thirdchern(self,r,s,t):
+    def c3(self,r,s,t):
         r"""
         Determines the third Chern class corresponding to J_r, J_s, J_t, via
 
@@ -382,30 +370,35 @@ class CICY:
 
         See Also
         --------
-        firstchern: First Chern class of J_r.
-        secondchern: Second Chern class of J_r, J_s.
-        thirdchernarray: Complete third Chern class.
+        c1: First Chern class of J_r.
+        c2: Second Chern class of J_r, J_s.
+        third_chern: Complete third Chern class.
 
         Example
         -------
-        >>> M = CICY('7833', [[2,2,1],[3,1,3]])
-        >>> M.thirdchern(0,1,1)
+        >>> M = CICY([[2,2,1],[3,1,3]])
+        >>> M.c3(0,1,1)
         -3.6666666666666665
         """
-        sumqqq = sum([self.M[r][i]*self.M[s][i]*self.M[t][i] for i in range(1,self.K+1)])
+        sumqqq = np.sum([self.M[r][i]*self.M[s][i]*self.M[t][i] for i in range(1,self.K+1)])
         if r==s and r==t:
             delta = self.M[r][0]+1
         else:
             delta = 0
         c3 = (delta-sumqqq)/3 # Calabi Yau
-        #c3 = ((delta-sumqqq)-
-        #(secondchern(M,r,s)*firstchern(M,t)+secondchern(M,s,t)*firstchern(M,r)+secondchern(M,t,r)*firstchern(M,s))
-        #+(firstchern(M,r)*firstchern(M,s)*firstchern(M,t)))/6 #for non Calabi Yau
+        if not self.CY:
+            # for non CY
+            c3 += self.c1(r)*self.c2(s,t)-self.c1(r)*self.c1(s)*self.c1(t)/3
         return c3
         
-    def thirdchernarray(self):
-        """
-        Determines all third Chern classes in a nested list.
+    def third_chern(self):
+        r"""
+        Determines c_3(M).
+
+        .. math::
+            \begin{align}
+            c_3^{rst}  = \frac{1}{3} \bigg[ \delta^{rst} (n_r + 1 ) - \sum_{a=1}^{K} q_a^r q_a^s q_a^t \bigg].
+            \end{align}
         
         Returns
         -------
@@ -414,20 +407,20 @@ class CICY:
 
         See Also
         --------
-        firstchern: First Chern class of J_r.
-        secondchern: Second Chern class of J_r, J_s.
-        thirdchern: Third Chern class of J_r, J_s, J_t.
+        first_chern: First Chern class.
+        second_chern: Second Chern class in vector notation.
+        third_chern: Third Chern class.
 
         Example
         -------
-        >>> M = CICY('7833', [[2,2,1],[3,1,3]])
-        >>> M.thirdchernarray()
+        >>> M = CICY([[2,2,1],[3,1,3]])
+        >>> M.c3()
         [[[-2.0, -2.3333333333333335], [-2.3333333333333335, -3.6666666666666665]], [[-2.3333333333333335, -3.6666666666666665], [-3.6666666666666665, -8.0]]]
         """
-        matrix = np.array([[[self.thirdchern(i,j,k) for k in range(self.len)] for j in range(self.len)] for i in range(self.len)])
+        matrix = np.array([[[self.c3(i,j,k) for k in range(self.len)] for j in range(self.len)] for i in range(self.len)])
         return matrix
 
-    def fourthchern(self, r, s, t, u):
+    def c4(self, r, s, t, u):
         r"""
         Determines the fourth Chern class J_r, J_s, J_t, J_u for Calabi Yau four folds
 
@@ -459,15 +452,15 @@ class CICY:
 
         See Also
         --------
-        firstchern: First Chern class of J_r.
-        secondchern: Second Chern class of J_r, J_s.
-        thirdchern: Third Chern class of J_r, J_s, J_t.
-        fourthchernall: All fourth Chern classes.
+        c1: First Chern class of J_r.
+        c2: Second Chern class of J_r, J_s.
+        c3: Third Chern class of J_r, J_s, J_t.
+        fourth_chern: All fourth Chern classes.
 
         Example
         -------
-        >>> M = CICY('4fold', [[2,3],[2,3],[1,2]])
-        >>> M.fourthchern(0,1,1,2)
+        >>> M = CICY([[2,3],[2,3],[1,2]])
+        >>> M.c4(0,1,1,2)
         20.25
 
         References
@@ -477,21 +470,28 @@ class CICY:
         """
 
         if self.nfold == 3 or self.nfold == 2:
-            raise Exception(self.name+' is a Calabai Yau 3fold.')
+            logging.error('{} is a Calabai Yau {}-fold.'.format(self.M, self.nfold))
         
-        sumqqqq = sum([self.M[r][i]*self.M[s][i]*self.M[t][i]*self.M[u][i] for i in range(1,self.K+1)])
+        sumqqqq = np.sum([self.M[r][i]*self.M[s][i]*self.M[t][i]*self.M[u][i] for i in range(1,self.K+1)])
         if r==s and r==t and r==u:
             delta = self.M[r][0]+1
         else:
             delta = 0
-        second = 2*self.secondchern(r,s)*self.secondchern(t,u)
+        second = 2*self.c2(r,s)*self.c2(t,u)
         c4 = (sumqqqq+second-delta)/4
+        if not self.CY:
+            c4 += 1/2*self.c2(r,s)*self.c2(t,u)+self.c1(r)*self.c3(s,t,u)-self.c1(r)*self.c1(s)*self.c2(t,u)+1/4*self.c1(r)*self.c1(s)*self.c1(t)*self.c1(u)
         return c4
 
-    def fourthchernall(self):
-        """
-        Determines all fourth Chern classes in a nested list.
+    def fourth_chern(self):
+        r"""
+        Determines c_4(M).
         
+        .. math::
+            \begin{align}
+            c_4^{rstu}  = \frac{1}{4} \bigg[ - \delta^{rstu} (n_r + 1 ) + \sum_{a=1}^{K} q_a^r q_a^s q_a^t q_a^u + 2 c_2^{rs} c_2^{tu} \bigg].
+            \end{align}
+
         Returns
         -------
         matrix: array[nProj, nProj, nProj, nProj]
@@ -499,18 +499,18 @@ class CICY:
 
         See Also
         --------
-        firstchern: First Chern class of J_r.
-        secondchern: Second Chern class of J_r, J_s.
-        thirdchern: Third Chern class of J_r, J_s, J_t.
-        fourthchern: Foruth Chern class of J_r, J_s, J_t, J_u.
+        c1: First Chern class of J_r.
+        c2: Second Chern class of J_r, J_s.
+        c3: Third Chern class of J_r, J_s, J_t.
+        c4: Foruth Chern class of J_r, J_s, J_t, J_u.
 
         Example
         -------
-        >>> M = CICY('4fold', [[2,3],[2,3],[1,2]])
-        >>> M.fourthchernall()
+        >>> M = CICY([[2,3],[2,3],[1,2]])
+        >>> M.fourth_chern()
         [[[[24.0, 27.0, 18.0], [27.0, 24.75, 18.0], [18.0, 18.0, 10.5]], ... , [[10.5, 11.25, 7.5], [11.25, 10.5, 7.5], [7.5, 7.5, 4.0]]]]
         """
-        matrix = np.array([[[[self.fourthchern(i,j,k,l) for l in range(self.len)]
+        matrix = np.array([[[[self.c4(i,j,k,l) for l in range(self.len)]
                      for k in range(self.len)] for j in range(self.len)] for i in range(self.len)])
         return matrix
 
@@ -546,33 +546,26 @@ class CICY:
         -------
         drst: float
             Returns the triple intersection number drst.
-        
-        Raises
-        ------
-        Exception
-            Only defined for Calabi Yau threefolds.
-
+    
         See also
         --------
-        drstmatrix: Determines all triple intersection numbers.
-        secondchernvector: The second Chern class as a vector.
-        eulerc: The eulercharacteristic.
-        drstu: The quadruple intersection numbers for a four fold.
+        triple_intersection: Determines all triple intersection numbers.
+        second_chern: The second Chern class as a vector.
+        euler_characteristic: The euler_characteristicharacteristic.
+        quadruple_intersection: The quadruple intersection numbers for a four fold.
 
         Example
         -------
-        >>> M = CICY('7833', [[2,2,1],[3,1,3]])
+        >>> M = CICY([[2,2,1],[3,1,3]])
         >>> M.drst(0,1,1)
         7.0
         """
-        #if self.nfold != 3:
-        #    raise Exception('Only defined for 3 folds.')
-        if not isinstance(self.triple, str):
+        if self.triple.shape[0] != 0:
             return self.triple[r][s][t]
         drst=0
         # Define the relevant part of \mu := \wedge^K_j \sum_r q_r^j J_r
-        combination = np.array([0 for i in range(self.K)])
-        count = [0 for i in range(self.len)]
+        combination = np.array([0 for _ in range(self.K)])
+        count = [0 for _ in range(self.len)]
         #now there are 5 distinct cases:
         #1) r=s=t or 2) all neqal or the 2-5) three cases where two are equal
         #1)
@@ -673,7 +666,7 @@ class CICY:
         # the combinations of mu grow exponentially with self.K and the number of ambient spaces
         # Check, when the number of multiset_permutations become to large to handle
         if self.K < 8 and len(np.unique(combination)) < 6:
-            # Hence, for large K and small, this might take really long. 
+            # Hence, for large K and small self.len, this might take really long. 
             mu = sp.utilities.iterables.multiset_permutations(combination)
             # self.K!/(#x_1!*...*#x_n!)
             for a in mu:
@@ -688,9 +681,11 @@ class CICY:
             return drst
         else:
             # here we calculate the nonzero paths through the CICY
-            nonzero = [[] for i in range(self.K)]
+            # much faster since CICYs with large K and large self.len tend to 
+            # be pretty sparse
+            nonzero = [[] for _ in range(self.K)]
             combination = np.sort(combination)
-            count_2 = [0 for i in range(self.len)]
+            count_2 = [0 for _ in range(self.len)]
             # run over all K to find possible paths
             for i in range(self.K):
                 for j in range(self.len):
@@ -729,7 +724,7 @@ class CICY:
                     drst += v
             return drst
 
-    def drstmatrix(self):
+    def triple_intersection(self):
         """
         Determines all triple intersection numbers.
         
@@ -740,23 +735,21 @@ class CICY:
         
         See also
         --------
-        drst: Determines the triple intersection number d_rst.
-        secondchernvector: The second Chern class as a vector.
-        eulerc: The eulercharacteristic.
-        drstu: The quadruple intersection numbers for a four fold.
+        second_chern: The second Chern class as a vector.
+        euler_characteristic: The eulercharacteristic.
 
         Example
         -------
-        >>> M = CICY('7833', [[2,2,1],[3,1,3]])
-        >>> M.drstmatrix()
+        >>> M = CICY([[2,2,1],[3,1,3]])
+        >>> M.triple_intersection()
         array([[[0., 3.],
                 [3., 7.]],
                [[3., 7.],
                 [7., 2.]]])
         """
-        #if self.nfold != 3:
-        #    raise Exception('Only defined for 3 folds.')
-        if not isinstance(self.triple, str):
+        if self.nfold != 3:
+            logging.warning('CICY is not a 3-fold.')
+        if self.triple.shape[0] != 0:
             return self.triple
         # Since the calculation of drst for large K becomes very tedious
         # we make use of symmetries
@@ -772,7 +765,7 @@ class CICY:
         self.triple = d
         return d
 
-    def secondchernvector(self):
+    def second_chern(self):
         r"""
         Uses the triple intersection numbers to contract the second chern matrix to a vector:
 
@@ -788,23 +781,22 @@ class CICY:
 
         See also
         --------
-        drst: Determines the triple intersection number d_rst.
-        secondchern: The second Chern class of J_r, J_s.
-        secondchernmatrix: All second Chern classes.
+        triple_intersection: Determines the triple intersection numbers.
+        second_chern_all: The second Chern class as a matrix.
 
         Example
         -------
-        >>> M = CICY('7833', [[2,2,1],[3,1,3]])
-        >>> M.secondchernvector()
+        >>> M = CICY([[2,2,1],[3,1,3]])
+        >>> M.c2()
         [36.0, 44.0]
         """
-        c2 = self.secondchernmatrix()
+        c2 = self.second_chern_all()
         chern = np.einsum('rst,st -> r', self.triple, c2)
         return chern
 
     def drstu(self,r,s,t,u,x=1):
         r"""
-        Determines the quadruple intersection numbers, d_rstu, for Calabi Yau four folds.
+        Determines the quadruple intersection numbers, d_rstu, for Calabi Yau 4-folds.
         
         Parameters
         ----------
@@ -824,20 +816,15 @@ class CICY:
         drstu: float
             The quadruple intersection number d_rstu.
 
-        Raises
-        ------
-        Exception
-            If the Calabi Yau is smaller than a four fold.
-
         See Also
         --------
         drst: Determines the triple intersection number d_rst.
-        eulerc: The eulercharacteristic.
-        drstumatrix: All quadruple intersection numbers of a four fold.
+        euler_characteristic: The eulercharacteristic.
+        quadruple_intersection: All quadruple intersection numbers of a 4-fold.
 
         Example
         -------
-        >>> M = CICY('4fold', [[2,3],[2,3],[1,2]])
+        >>> M = CICY([[2,3],[2,3],[1,2]])
         >>> M.drstu(0,1,1,2)
         3
 
@@ -846,14 +833,16 @@ class CICY:
         .. [1] All CICY four-folds, by J. Gray, A. Haupt and A. Lukas.
             https://arxiv.org/pdf/1303.1832.pdf
         """
-        #if self.nfold != 4:
-        #    raise Exception('Only defined for 4 folds.')
-        if not isinstance(self.quadruple, str):
+
+        if self.nfold != 4:
+            logging.warning('CICY is not a 4-fold.')
+
+        if self.quadruple.shape[0] != 0:
             return self.quadruple[r][s][t][u]
         drstu=0
         # Define the relevant part of \mu := \wedge^K_j \sum_r q_r^j J_r
-        combination = np.array([0 for i in range(self.K)])
-        count = [0 for i in range(self.len)]
+        combination = np.array([0 for _ in range(self.K)])
+        count = [0 for _ in range(self.len)]
         #now there are 5 distinct cases:
         #1) r=s=t=u or 2) all neqal or the 3) two equal, two nonequal
         #4) two equal and two equal 5) three equal
@@ -875,7 +864,7 @@ class CICY:
             if not contained:
                 count[j] = self.M[j][0]
                 combination[i:i+count[j]] = j
-                i += self.M[j][0]-unc[a]
+                i += self.M[j][0]
         # just copy from drst
         # the combinations of mu grow exponentially with self.K and the number of ambient spaces
         # Check, when the number of multiset_permutations become to large to handle
@@ -895,9 +884,9 @@ class CICY:
             return drstu
         else:
             # here we calculate the nonzero paths through the CICY
-            nonzero = [[] for i in range(self.K)]
+            nonzero = [[] for _ in range(self.K)]
             combination = np.sort(combination)
-            count_2 = [0 for i in range(self.len)]
+            count_2 = [0 for _ in range(self.len)]
             # run over all K to find possible paths
             for i in range(self.K):
                 for j in range(self.len):
@@ -936,7 +925,7 @@ class CICY:
                     drstu += v
             return drstu
 
-    def drstumatrix(self):
+    def quadruple_intersection(self):
         """
         Determines all quadruple intersection numbers.
         
@@ -947,14 +936,13 @@ class CICY:
         
         See also
         --------
-        drst: Determines the triple intersection number d_rst.
-        eulerc: The eulercharacteristic.
-        drst: The quadruple intersection number d_rstu for a four fold.
+        triple_intersection: The triple intersection numbers of a 3-fold.
+        euler_characteristic: The eulercharacteristic.
 
         Example
         -------
-        >>> M = CICY('4fold', [[2,3],[2,3],[1,2]])
-        >>> M.drstu(0,1,1,2)
+        >>> M = CICY([[2,3],[2,3],[1,2]])
+        >>> M.quadruple_intersection(0,1,1,2)
         array([[[[0., 0., 0.],
                  [0., 2., 3.],
                  [0., 3., 0.]],
@@ -963,7 +951,8 @@ class CICY:
                  [0., 0., 0.],
                  [0., 0., 0.]]]])
         """
-        if not isinstance(self.quadruple, str):
+        # check if they have been calculated before
+        if self.quadruple.shape[0] != 0:
             return self.quadruple
         # Since the calculation of drstu for large K becomes very tedious
         # we make use of symmetries
@@ -979,7 +968,7 @@ class CICY:
         self.quadruple = d
         return d
 
-    def eulerc(self):
+    def euler_characteristic(self):
         r"""
         Determines the Euler characteristic via integration of the Chern class. Take e.g. n=3
 
@@ -996,26 +985,26 @@ class CICY:
         See also
         --------
         drst: Determines the triple intersection number d_rst.
-        thirdchern: The third Chern class of J_r, J_s, J_t.
+        c3: The third Chern class of J_r, J_s, J_t.
         drstu: The quadruple intersection number d_rstu for a four fold.
-        fourthchern: The fourth Chern class of J_r, J_s, J_t, J_u.
+        c4: The fourth Chern class of J_r, J_s, J_t, J_u.
 
         Example
         -------
-        >>> M = CICY('7833', [[2,2,1],[3,1,3]])
-        >>> M.eulerc()
+        >>> M = CICY([[2,2,1],[3,1,3]])
+        >>> M.euler_characteristic()
         -114.0
         """
-        if not isinstance(self.euler, str):
+        if self.euler != 1:
             return self.euler
         e = 0
         if self.nfold == 3:
-            d = self.drstmatrix()
-            c3 = self.thirdchernarray()
+            d = self.triple_intersection()
+            c3 = self.third_chern()
             e =  np.einsum('rst,rst', d, c3)
         elif self.nfold == 4:
-            d = self.drstumatrix()
-            c4 = self.fourthchernall()
+            d = self.quadruple_intersection()
+            c4 = self.fourth_chern()
             e =  np.einsum('rstu,rstu', d, c4)
         elif self.nfold == 2:
             e = 24
@@ -1097,7 +1086,8 @@ class CICY:
         return [save, j]
 
     def _hom(self, V, k):
-        r"""Determines the nonzero entries in the first Leray instance.
+        r"""
+        Determines the nonzero entries in the first Leray instance.
            This is achieved by calculating all vector bundles resulting from
            \wedge^k N \otimes V .
            Returns then a list of all surviving representations and their origin.
@@ -1175,7 +1165,8 @@ class CICY:
         return [Bott, j], ob
 
     def _brackets_dimv(self, B):
-        """Determines the dimension of a vector bundle in bracket notation.
+        r"""
+        Determines the dimension of a vector bundle in bracket notation.
         
         Args:
             B (nested list: int): Vector bundle in bracket notation.
@@ -1196,7 +1187,8 @@ class CICY:
         return int(dim)
 
     def _vector_brackets(self, V):
-        """Takes a vector(tangent ambient) bundle in BBW notation and
+        r"""
+        Takes a vector(tangent ambient) bundle in BBW notation and
         transforms into Bracket notation.
         
         Follows schematically:
@@ -1277,9 +1269,9 @@ class CICY:
 
         Example
         -------
-        >>> M = CICY('7833', [[2,2,1],[3,1,3]])
+        >>> M = CICY([[2,2,1],[3,1,3]])
         >>> V = M._line_to_BBW([3,-4])
-        >>> M.Leray()
+        >>> M.Leray(V)
         ([[0, 0, 0, [[3, 0]], 0, 0], [0, 0, 0, [[1, -1], [2, -3]], 0, 0], [0, 0, 0, [[0, -4]], 0, 0]],
          [[0, 0, 0, 0, 0, 0], [0, 0, 0, [(0,), (1,)], 0, 0], [0, 0, 0, [(0, 1)], 0, 0]])
         """
@@ -1340,7 +1332,8 @@ class CICY:
         return E, origin
 
     def _line_to_BBW(self, L):
-        """Transforms a line bundle into BBW notation.
+        r"""
+        Transforms a line bundle into BBW notation.
         
         Args:
             L (list: int): line bundle
@@ -1360,7 +1353,8 @@ class CICY:
         return linebundle
 
     def _line_brackets(self, V):
-        """Takes a line bundle in BBW notation and transforms into bracket notation.
+        r"""
+        Takes a line bundle in BBW notation and transforms into bracket notation.
         
         Follows schematically:
             (-1|0  )
@@ -1388,7 +1382,8 @@ class CICY:
         return brackets
 
     def _brackets_dim(self, B):
-        """Determines the dimension of a line bundle in bracket notation.
+        r"""
+        Determines the dimension of a line bundle in bracket notation.
         
         Args:
             B (list: int): Line bundle in bracket notation.
@@ -1403,7 +1398,8 @@ class CICY:
         return int(dim)
 
     def _lorigin(self, or1, or2):
-        """Takes two origins and returns a list of allowed mappings.
+        r"""
+        Takes two origins and returns a list of allowed mappings.
         
         Args:
             or1 (list: int): Origins of the first bundle
@@ -1423,7 +1419,7 @@ class CICY:
         return origin
 
     def hodge_data(self):
-        """
+        r"""
         Determines the hodge numbers of the CICY. Based on Euler and adjunction sequence.
         I checked the results for all three folds against the ones found in the CICYlist.
         The computation of the four fold hodge numbers, however, has only been checked for some selected examples.
@@ -1433,19 +1429,14 @@ class CICY:
         -------
         h: array[nfold+1]
             hodge numbers of the CICY.
-        
-        Raises
-        ------
-        Exception
-            Only implemented for 2,3 and 4 folds.
 
         See also
         --------
-        eulerc: Determines the euler characteristic
+        euler_characteristic: Determines the euler characteristic
 
         Example
         -------
-        >>> M = CICY('7833', [[2,2,1],[3,1,3]])
+        >>> M = CICY([[2,2,1],[3,1,3]])
         >>> M.hodge_data()
         [0, 59, 2.0, 0]
 
@@ -1453,127 +1444,136 @@ class CICY:
         ----------
         .. [1] CY - The Bestiary, T. Hubsch
             http://inspirehep.net/record/338506?ln=en
+        .. [2] Topologial Invariants and Fibration Structure of CICY 4-folds
+            J. Gray, A. Haupt, A. Lukas
+            1405.2073
         """
-        h = [0 for i in range(self.nfold+1)]
+        # first we check if direct product
+        h = [0 for _ in range(self.nfold+1)]
+        if self.K > 1:
+            test, text = self.is_directproduct()
+            if test:
+                if self.doc:
+                    logging.info('The configuration matrix corresponds to a direct product:')
+                    logging.info(text)
+                # Apply Kunneth to get proper hodge data?
+                # we return zero list, to be consistent with the CICYlist
+                return h
+
+        # disable doc, since a lot of trivial line bundle computations
+        # we are not particular interested in follow.
+        documentation = np.copy(self.doc)
+        self.doc = False
+
+        # We begin with \mathcal{N}
+        # dimensions of all defining hypersurfaces
+        normal_dimensions = np.zeros((self.K, self.nfold+1))
+        # and their spaces
+        normal_spaces = [[] for _ in range(self.K)]
+        # The total dimensions
+        n_dim = [0 for _ in range(self.nfold+1)]
+        # The total space
+        n_space = [[] for _ in range(self.nfold+1)]
+        # we run over each defining hypersurface
+        for i in range(self.K):
+            normal_dimensions[i], normal_spaces[i] = self.line_co(np.transpose(self.N)[i], space=True)
+            for j in range(self.nfold+1):
+                # add all dimension
+                n_dim[j] += normal_dimensions[i][j]
+                # add all spaces
+                if normal_spaces[i][j] != []:
+                    n_space[j] += [normal_spaces[i][j]]
+
+        # Next \mathcal{R}
+        # dimensions of all unit hypersurfaces
+        unit_dimensions = np.zeros((self.len, self.nfold+1))
+        # and their spaces
+        unit_spaces = [[] for _ in range(self.len)]
+        # The total dimensions
+        u_dim = [0 for _ in range(self.nfold+1)]
+        # The total space
+        u_space = [[] for _ in range(self.nfold+1)]
+        for i in range(self.len):
+            unit_dimensions[i], unit_spaces[i] = self.line_co([0 if j != i else 1 for j in range(self.len)], space=True)
+            for j in range(self.nfold+1):
+                # add up to the dimensions
+                u_dim[j] += (self.M[i][0]+1)*unit_dimensions[i][j]
+                if unit_dimensions[i][j] != []:
+                    u_space[j] += [unit_dimensions[i][j] for a in range(self.M[i][0]+1)]
+
+        # enable doc again.
+        self.doc = documentation
+
         if self.nfold == 3:
-            # first we check if direct product
-            if self.K > 1:
-                test, text = self.is_directproduct()
-                if test:
-                    if self.doc:
-                        print('The configuration matrix corresponds to a direct product')
-                        print(text)
-                    # Apply Kunneth to get proper hodge data?
-                    return h
+
             # we only need to determine h^21 or h^11 since they
             # are related via Euler characteristic
-            n_cod, n_cos = [0 for i in range(self.K)], [0 for i in range(self.K)]
-            n_dim, n_spa = [0 for i in range(self.nfold+1)], [[] for i in range(self.nfold+1)]
-            for i in range(self.K):
-                n_cod[i], n_cos[i] = self.line_co(np.transpose(self.N)[i], space=True)
-                for j in range(self.nfold+1):
-                    n_dim[j] += n_cod[i][j]
-                    if n_cos[i][j] != []:
-                        n_spa[j] += [n_cos[i][j]]
-            # tangent bundle related cohomology
-            s_cod, s_cos = [0 for i in range(self.len)], [0 for i in range(self.len)]
-            s_dim, s_spa = [0 for i in range(self.nfold+1)], [[] for i in range(self.nfold+1)]
-            for i in range(self.len):
-                s_cod[i], s_cos[i] = self.line_co([0 if j != i else 1 for j in range(self.len)], space=True)
-                for j in range(self.nfold+1):
-                    s_dim[j] += (self.M[i][0]+1)*s_cod[i][j]
-                    if s_cos[i][j] != []:
-                        s_spa[j] += [s_cos[i][j] for a in range(self.M[i][0]+1)]#[s_cos[i][j]]
-            
+
             if self.doc:
-                print('We find the following dimensions in the long exact cohomology sequence:')
-                print('0 -> '+str(s_dim[0])+' -> '+str(n_dim[0]))
-                print('h^{2,1} -> '+str(s_dim[1])+' -> '+str(n_dim[1]))
-                print('h^{1,1} -> '+str(s_dim[2])+' -> '+str(n_dim[2]))
-                print('0 -> '+str(s_dim[3])+' -> '+str(n_dim[3]))
+                logging.info('We find the following dimensions in the long exact cohomology sequence:')
+                logging.info('0 -> '+str(u_dim[0]-self.len)+' -> '+str(n_dim[0]))
+                logging.info('h^{2,1} -> '+str(u_dim[1])+' -> '+str(n_dim[1]))
+                logging.info('h^{1,1} -> '+str(u_dim[2])+' -> '+str(n_dim[2]))
+                logging.info('0 -> '+str(u_dim[3])+' -> '+str(n_dim[3]))
 
             # need to calculate kernel(H^1(X,S) -> H^1(X,N))
             if n_dim[1] == 0:
-                kernel = s_dim[1]
-            elif s_dim[1] == 0:
+                kernel = u_dim[1]
+            elif u_dim[1] == 0:
                 kernel = 0
             else:
                 # generic surjective map, matches the results for all CICY threefolds in the literature
                 # We don't really need the space then.
-                kernel = np.argmax([0, s_dim[1]-n_dim[1]])
+                kernel = np.argmax([0, u_dim[1]-n_dim[1]])
             # fill in h^21=h1 and h^11=h2
-            h[1] = n_dim[0]-s_dim[0]+self.len+kernel
-            h[2] = self.eulerc()/2+h[1]
+            h[1] = n_dim[0]-u_dim[0]+self.len+kernel
+            h[2] = self.euler_characteristic()/2+h[1]
             return h
         elif self.nfold == 4:
             # first we check if direct product
-            test, text = self.is_directproduct()
-            if test:
-                if self.doc:
-                    print('The configuration matrix corresponds to a direct product')
-                    print(text)
-                # Apply Kunneth?
-                return h
-            # we use the results from 1405.2073
-            # euler = 4 +2h^11-4h^21+2h^31+h^22
-            # -4h^11+2h^21-4h^31+h^22=44
-            n_cod, n_cos = [0 for i in range(self.K)], [0 for i in range(self.K)]
-            n_dim, n_spa = [0 for i in range(self.nfold+1)], [[] for i in range(self.nfold+1)]
-            for i in range(self.K):
-                n_cod[i], n_cos[i] = self.line_co(np.transpose(self.N)[i], space=True)
-                for j in range(self.nfold+1):
-                    n_dim[j] += n_cod[i][j]
-                    if n_cos[i][j] != []:
-                        n_spa[j] += [n_cos[i][j]]
-
-            s_cod, s_cos = [0 for i in range(self.len)], [0 for i in range(self.len)]
-            s_dim, s_spa = [0 for i in range(self.nfold+1)], [[] for i in range(self.nfold+1)]
-            for i in range(self.len):
-                s_cod[i], s_cos[i] = self.line_co([0 if j != i else 1 for j in range(self.len)], space=True)
-                for j in range(self.nfold+1):
-                    s_dim[j] += (self.M[i][0]+1)*s_cod[i][j]
-                    if s_cos[i][j] != []:
-                        s_spa[j] += [s_cos[i][j] for a in range(self.M[i][0]+1)]#[s_cos[i][j]]
+            logging.warning('Hodge numbers have only been checked for all 3-folds. \n'+
+                            'Double check your results with the literature.')
 
             if self.doc:
-                print('We find the following dimensions in the long exact cohomology sequence:')
-                print('0 -> '+str(s_dim[0])+' -> '+str(n_dim[0]))
-                print('h^{3,1} -> '+str(s_dim[1])+' -> '+str(n_dim[1]))
-                print('h^{2,1} -> '+str(s_dim[2])+' -> '+str(n_dim[2]))
-                print('h^{1,1} -> '+str(s_dim[3])+' -> '+str(n_dim[3]))
-                print('0 -> '+str(s_dim[4])+' -> '+str(n_dim[4]))
+                logging.info('We find the following dimensions in the long exact cohomology sequence:')
+                logging.info('0 -> '+str(u_dim[0]-self.len)+' -> '+str(n_dim[0]))
+                logging.info('h^{3,1} -> '+str(u_dim[1])+' -> '+str(n_dim[1]))
+                logging.info('h^{2,1} -> '+str(u_dim[2])+' -> '+str(n_dim[2]))
+                logging.info('h^{1,1} -> '+str(u_dim[3])+' -> '+str(n_dim[3]))
+                logging.info('0 -> '+str(u_dim[4])+' -> '+str(n_dim[4]))
 
             # need to calculate kernel(H^1(X,S) -> H^1(X,N))
             if n_dim[1] == 0:
-                kernel = s_dim[1]
-            elif s_dim[1] == 0:
+                kernel = u_dim[1]
+            elif u_dim[1] == 0:
                 kernel = 0
             else:
                 # surjective as for threefold
-                kernel = np.argmax([0, s_dim[1]-n_dim[1]])
+                kernel = np.argmax([0, u_dim[1]-n_dim[1]])
             # fill in h^31=h1 and h^21=h2 and h^11 = h3 and 
             # with some abuse of notation we redefine h4 := h^22 
-            h[1] = n_dim[0]-s_dim[0]+self.len+kernel
+            h[1] = n_dim[0]-u_dim[0]+self.len+kernel
             # check if the sequence splits anywhere
-            if s_dim[2] == 0:
-                h[2] = n_dim[1]-(s_dim[1]-kernel)
-                h[3] = self.eulerc()/6+h[2]-h[1]-8
+            if u_dim[2] == 0:
+                h[2] = n_dim[1]-(u_dim[1]-kernel)
+                h[3] = self.euler_characteristic()/6+h[2]-h[1]-8
                 h[4] = 44+4*h[3]-2*h[2]+4*h[1]
             elif n_dim[2] == 0:
-                h[2] = n_dim[1]-(s_dim[1]-kernel)+s_dim[2]
-                h[3] = self.eulerc()/6+h[2]-h[1]-8
+                h[2] = n_dim[1]-(u_dim[1]-kernel)+u_dim[2]
+                h[3] = self.euler_characteristic()/6+h[2]-h[1]-8
                 h[4] = 44+4*h[3]-2*h[2]+4*h[1]
             else:
                 # assume surjectiv again
-                h[2] = n_dim[1]-(s_dim[1]-kernel)+np.argmax([0, s_dim[2]-n_dim[2]])
-                h[3] = self.eulerc()/6+h[2]-h[1]-8
+                h[2] = n_dim[1]-(u_dim[1]-kernel)+np.argmax([0, u_dim[2]-n_dim[2]])
+                h[3] = self.euler_characteristic()/6+h[2]-h[1]-8
                 h[4] = 44+4*h[3]-2*h[2]+4*h[1]
             return h
         elif self.nfold == 2:
             # K3
             return [0, 20, 0]
         else:
-            raise Exception('Hodge calculation is only implemented for n=2,3,4 CY folds.')
+            logging.error('Hodge calculation is only implemented for n=2,3,4 CY folds and'+
+                            'properly supported for 3 folds.')
 
     def is_favourable(self):
         """
@@ -1591,7 +1591,7 @@ class CICY:
 
         Example
         -------
-        >>> M = CICY('7833', [[2,2,1],[3,1,3]])
+        >>> M = CICY([[2,2,1],[3,1,3]])
         >>> M.is_favourable()
         True
         """
@@ -1620,10 +1620,10 @@ class CICY:
 
         Examples
         --------
-        >>> M = CICY('7833', [[2,2,1],[3,1,3]])
+        >>> M = CICY([[2,2,1],[3,1,3]])
         >>> M.is_directproduct()
         (False, []) 
-        >>> D = CICY('TxK3', [[2,3,0],[3,0,4]])
+        >>> D = CICY([[2,3,0],[3,0,4]])
         >>> D.is_directproduct()
         (True, [['T', [0]], ['K3', [1]]])
         """
@@ -1668,7 +1668,7 @@ class CICY:
                                 return direct, product
                             if self.nfold == 3:
                                 direct = False
-                                print('Are you the Quintic?')
+                                logging.warning('Are you the Quintic?')
                                 return direct, product
                         else:
                             raise Exception('There must be a mistake in the configuration matrix: '+str([i,x]))
@@ -1740,14 +1740,14 @@ class CICY:
         v2poly = self._makepoly(V2, dim_V2)
         # loop over all monomials
 
-        if self.debug:
+        if self.doc:
             start = time.time()
 
         for i in range(dim_V1):
             # loop over all moduli 'monomials'
             for j in range(dim_mod):
                 monomial = []
-                derivative = 1
+                #derivative = 1
                 # determine the new monomial
                 for x,y in zip(source[i], mod_polys[j]):
                     # if y is bigger we simply multiply
@@ -1775,15 +1775,15 @@ class CICY:
                     #        break
                     #np approach; factor of ~150 faster
                     k = np.where(np.all(monomial == v2poly, axis=1))[0][0]
-                    smatrix[k][i] = self.moduli[t][j]*derivative
+                    smatrix[k][i] = self.moduli[t][j]#*derivative
                     #nicer approach which finds the position; not implemented yet.
                     #pos = self.decoder(monomial, V2, dim_V2)
                     #smatrix[i][pos] = self.moduli[t][j]*derivative
         #print(smatrix)
 
-        if self.debug and self.doc:
+        if self.doc:
             end = time.time()
-            print('Time:', end-start)
+            logging.debug('Time: {}'.format(end-start))
 
         return smatrix
 
@@ -1801,18 +1801,13 @@ class CICY:
             (list: int): dimensions of [kernel, image] of the map; image=rank of the matrix
         """
 
-        #if self.debug:
-        #    directory = self.directory+str([len(V1), len(V2)])
-        #    os.makedirs(directory)
-        #    os.chdir(directory)
-
         # Check if V1 or V2 are zero then trivial
         if V1 == 0:
             return [0,0]
         else:
             if V2 == 0:
-                dimension = [self._brackets_dim(x) for x in V1]
-                return [sum(dimension), 0]
+                dimension = np.array([self._brackets_dim(vector) for vector in V1])
+                return [np.sum(dimension), 0]
 
         # We fill the first list, V1, with bracket notation
         dim_bracket_V1 = [self._brackets_dim(V1[j]) for j in range(len(V1))]
@@ -1823,8 +1818,8 @@ class CICY:
         dim_V2 = sum(dim_bracket_V2)
 
         if self.doc:
-            print('We determine the map from', V1, 'to', V2, 
-                    'with dimensions', [dim_bracket_V1,dim_V1], 'and', [dim_bracket_V2,dim_V2])
+            logging.info('We determine the map from \n {} \n to \n {} \n with dimensions {} and {}.'.format(np.array(V1), np.array(V2),
+                             [dim_bracket_V1, dim_V1], [dim_bracket_V2,dim_V2]))
             f_n = [[0 for i in range(len(V1))] for j in range(len(V2))]
             f_or = [[0 for i in range(len(V1))] for j in range(len(V2))]
             start = time.time()
@@ -1836,7 +1831,7 @@ class CICY:
         for i in range(len(dim_bracket_V1)):
             Many =  self._lorigin( V1o[i], V2o)
             if self.doc:
-                print('The bundle maps to', Many)
+                logging.debug('The bundle maps to {}'.format(Many))
 
             # y-position in the big matrix
             ymin = sum(dim_bracket_V1[:i])
@@ -1868,43 +1863,36 @@ class CICY:
 
         if self.doc:
             mid = time.time()
-            print('Creation of the map took: '+str(mid-start))
+            logging.info('Creation of the map took: {}.'.format(mid-start))
             if self.debug:
                 if not os.path.exists(self.directory):
                     os.makedirs(self.directory)
-                    os.chdir(self.directory)
-                    print('directory created at', self.directory)
-                np.savetxt(self.directory+'/'+str(V1)+str(V2)+'.csv', matrix, delimiter=',', fmt='%i')
+                    #os.chdir(self.directory)
+                    logging.debug('directory created at {}.'.format(self.cdirectory))
+                tmp_dir = os.path.join(self.cdirectory, str(V1)+str(V2)+'.csv')
+                np.savetxt(tmp_dir, matrix, delimiter=',', fmt='%i')
+                logging.debug('Map has been saved at {}.'.format(tmp_dir))
 
 
-        # for large matrices here appears to be the bottleneck;
-        # needs a lot of ram and takes the most time.
+        # Bottleneck for large matrices;
+        # needs a lot of memory and takes the most time.
         rank = np.linalg.matrix_rank(matrix)
 
         if self.doc:
             end = time.time()
-            print('The total map is then:')
-            print(matrix)
-            print('in terms of polynomials')
-            print(f_n)
-            print('and has rank:')
-            print(rank)
-            print('such that we return for kernel+image:')
-            print([dim_V1-rank,rank])
-            print('Rank calculation took:'+str(end-mid))
-            print('Total time for this map: '+str(end-start))
+            logging.info('The map in terms of polynomials is given by \n {}.'.format(np.array(f_n)))
+            logging.info('It has rank {}.'.format(rank))
+            logging.info('Thus, dimension of kernel and image are {}.'.format([dim_V1-rank,rank]))
+            logging.info('The rank calculation took {}.'.format(end-mid))
+            logging.info('The total time needed for this map was {}.'.format(end-start))
 
         if self.debug and self.doc:
-            print(V1o)
-            print('maps via')
-            print(f_or)
-            print('to')
-            print(V2o)
+            logging.debug('We had {} mapping via {} to {}.'.format(V1o, f_or, V2o))
 
         return [dim_V1-rank,rank]
 
     def _makepoly(self, rep, dim):
-        """Takes a bracket notation and creates a monomial basis.
+        r"""Takes a bracket notation and creates a monomial basis.
         Schematically:
             (1,1) in the ambient space P1*P1 returns:
             - > [[1,0,1,0],[0,1,1,0],[1,0,0,1],[0,1,0,1]]
@@ -1966,35 +1954,26 @@ class CICY:
 
         Example
         -------
-        >>> M = CICY('7833', [[2,2,1],[3,1,3]])
+        >>> M = CICY([[2,2,1],[3,1,3]])
         >>> M.line_index()
         1.5*m0**2*m1 + 3.5*m0*m1**2 + 3.0*m0 + 0.333333333333333*m1**3 + 3.66666666666667*m1
         """
         L = sp.symbols('m0:'+str(self.len))
         if self.nfold == 3:
             euler = 0
-            if type(self.drst) == str:
-                self.triple = self.drstmatrix()
+            if self.triple.shape[0] == 0:
+                self.triple = self.triple_intersection()
             for r in range(self.len):
                 for s in range(self.len):
                     for t in range(self.len):
-                        euler += self.triple[r][s][t]*(1/6*L[r]*L[s]*L[t]+1/12*L[r]*self.secondchern(s,t))
+                        euler += self.triple[r][s][t]*(1/6*L[r]*L[s]*L[t]+1/12*L[r]*self.c2(s,t))
             return euler
         else:
-            return 'not implemented yet'
-        """if self.nfold == 4:
-            euler = 0
-            if type(self.quadruple) == str:
-                self.quadruple = self.drstumatrix()
-            for r in range(self.len):
-                for s in range(self.len):
-                    for t in range(self.len):
-                        for u in range(self.len):
-                            # check the prefactors and such
-                            euler += self.quadruple[r][s][t]*(1/6*L[r]*L[s]*L[t]*L[u]+1/12*L[r]*self.thirdchern(s,t,u))
-            return euler"""        
+            # TO DO implement this.
+            logging.warning('line_index() is only implemented for 3-folds.')
+            return 'not implemented yet'   
 
-    def line_co_euler(self, L, Leray=False, quick=True):
+    def line_co_euler(self, L, Leray=False):
         r"""
         Determines the index of a line bundle L.
         
@@ -2005,9 +1984,6 @@ class CICY:
         Leray : bool, optional
             If True, uses the Leray table to determine the index, by default False.
             For n=/=3 folds automatically falls back to the Leray table.
-        quick: bool, optional
-            Uses numpy tensor manipulation and is by far the 
-            quickest version.
         
         Returns
         -------
@@ -2021,62 +1997,31 @@ class CICY:
 
         Example
         -------
-        >>> M = CICY('7833', [[2,2,1],[3,1,3]])
+        >>> M = CICY([[2,2,1],[3,1,3]])
         >>> M.line_co_euler([-4,3])
         -46.0
         """
         # using Chern classes
-        if quick:
+        if self.nfold == 3 and not Leray:
             line_tensor = 1/6*np.einsum('i,j,k -> ijk', L, L, L)
-            chern_tensor = 1/12*np.einsum('i, jk -> ijk', L, self.c2t)
+            chern_tensor = 1/12*np.einsum('i, jk -> ijk', L, self.c2_tensor)
             t = np.add(line_tensor, chern_tensor)
             return np.einsum('rst, rst', self.triple, t)
-        
-        if self.doc:
-            start = time.time()
 
-        if not Leray:
-            if self.nfold == 3:
-                euler = 0
-                if type(self.drst) == str:
-                    self.triple = self.drstmatrix()
-                for r in range(self.len):
-                    for s in range(self.len):
-                        for t in range(self.len):
-                            euler += self.triple[r][s][t]*(1/6*L[r]*L[s]*L[t]+1/12*L[r]*self.secondchern(s,t))
-                if self.doc:
-                    end = time.time()
-                    print('The calculation took:', end-start)
-                return euler
-            """if self.nfold == 4:
-                euler = 0
-                if type(self.quadruple) == str:
-                    self.quadruple = self.drstumatrix()
-                for r in range(self.len):
-                    for s in range(self.len):
-                        for t in range(self.len):
-                            for u in range(self.len):
-                                # check the prefactos and such
-                                euler += self.quadruple[r][s][t]*(1/6*L[r]*L[s]*L[t]*L[u]+1/12*L[r]*self.thirdchern(s,t,u))
-                if self.doc:
-                    end = time.time()
-                    print('The calculation took:', end-start)
-                return euler"""
+        # TO DO index of four folds with CHERN class
+        # We use Leray
 
         # Build our Leray tableaux E_1[k][j]
         V = self._line_to_BBW(L)
         Table1, _ = self.Leray(V)        
         
         if self.doc:
-            print('We determine the index of',
-                    L, 'over the CICY', self.M)
-            print('The first Leray instance takes the form:')
+            logging.info('Determine index via Lerray table.')
             t = Texttable()
             t.add_row(['j\\K']+[k for k in range(self.K, -1,-1)])
-            #print(Table1)
             for j in range(self.dimA+1):
                 t.add_row([j]+[Table1[k][j] for k in range(self.K, -1,-1)])
-            print (t.draw())
+            logging.info('\n'+t.draw())
         
         euler = 0
         for k in range(len(Table1)):
@@ -2085,10 +2030,8 @@ class CICY:
                     for entry in Table1[k][j]:
                         euler += (-1)**(k+j)*self._brackets_dim(entry) 
 
-        end = time.time()
         if self.doc:
-            print('euler: ', euler)
-            print('The calculation took:', end-start)
+            logging.info('The index is {}.'.format(euler))
         return euler
 
     def l_slope(self, line, dual=False):
@@ -2120,7 +2063,7 @@ class CICY:
 
         Example
         -------
-        >>> M = CICY('7833', [[2,2,1],[3,1,3]])
+        >>> M = CICY([[2,2,1],[3,1,3]])
         >>> M.l_slope([-4,3])
         (True, [9.0*t0**2 + 18.0*t0*t1 - 22.0*t1**2])
         """
@@ -2134,9 +2077,9 @@ class CICY:
 
         if not dual:
             # in terms of kähler moduli
-            for i in range(len(line)):
-                for j in range(len(line)):
-                    for k in range(len(line)):
+            for i in range(self.len):
+                for j in range(self.len):
+                    for k in range(self.len):
                         factor = line[i]*self.drst(i,j,k,1)
                         constraint += factor*ts[j]*ts[k]
 
@@ -2154,8 +2097,7 @@ class CICY:
             else:
                 slope = False
             if self.doc:
-                print('The slope stability constraint reads:')
-                print([constraint])#+kaehlerc
+                logging.info('The slope stability constraint reads {}.'.format([constraint]))
             solution = [constraint]
             return slope, solution
         
@@ -2168,8 +2110,7 @@ class CICY:
 
         #kaehlerc = [x > 0 for x in ts]
         if self.doc:
-            print('The slope stability constraint reads:')
-            print([constraint])#+kaehlerc
+                logging.info('The slope stability constraint reads {}.'.format([constraint]))
         solution = [constraint]#+kaehlerc
         return slope, solution
 
@@ -2188,7 +2129,7 @@ class CICY:
 
         Example
         -------
-        >>> M = CICY('7833', [[2,2,1],[3,1,3]])
+        >>> M = CICY([[2,2,1],[3,1,3]])
         >>> M.line_slope()
         6.0*m0*t0*t1 + 7.0*m0*t1**2 + 3.0*m1*t0**2 + 14.0*m1*t0*t1 + 2.0*m1*t1**2
         """
@@ -2196,15 +2137,17 @@ class CICY:
         constraint = 0
         ts = sp.symbols('t0:'+str(self.len))
 
-        if self.fav:
-            if self.nfold == 3:
-                for i in range(self.len):
-                    for j in range(self.len):
-                        for k in range(self.len):
-                            factor = L[i]*self.drst(i,j,k,1)
-                            constraint += factor*ts[j]*ts[k]
-                return constraint
-        return 'not implemented'
+        if self.nfold == 3:
+            for i in range(self.len):
+                for j in range(self.len):
+                    for k in range(self.len):
+                        factor = L[i]*self.drst(i,j,k,1)
+                        constraint += factor*ts[j]*ts[k]
+            return constraint
+        else:
+            # TO DO. FIX THIS.
+            logging.info('line_slope() is only implemented for 3-folds.')
+            return 'not implemented'
 
 
     def line_co(self, L, space=False, short=True):
@@ -2235,7 +2178,7 @@ class CICY:
 
         Example
         -------
-        >>> M = CICY('7833', [[2,2,1],[3,1,3]])
+        >>> M = CICY([[2,2,1],[3,1,3]])
         >>> M.line_co([-4,3])
         [0,46,0,0]
 
@@ -2259,19 +2202,20 @@ class CICY:
         hspace = [[] for i in range(self.nfold+1)]
         
         if self.doc:
-            print('We determine the line bundle cohomology of',
-                    L, 'over CICY', self.M)
-            print('The first Leray instance takes the form:')
+            logging.info('We determine the hodge numbers of {} over the CICY \n {}.'.format(L, self.M))
+            logging.info('The first Leray instance takes the form:')
             t = Texttable()
             t.add_row(['j\\K']+[k for k in range(self.K, -1,-1)])
-            #print(Table1)
+            
             for j in range(self.dimA+1):
                 t.add_row([j]+[Table1[k][j] for k in range(self.K, -1,-1)])
-            print(t.draw())
+            
+            logging.info('\n'+t.draw())
+            # change directory
             sdir = 'l'
             for a in L:
                 sdir += str(a)
-            self.directory = self.directory+sdir
+            self.cdirectory = os.path.join(self.directory, sdir)
 
         # variables for the image
         images = sp.symbols('f0:'+str(self.K+2), integer=True)
@@ -2320,7 +2264,7 @@ class CICY:
                                     spacetable[k][j] += [Table1[0][j-1],Table1[k][j], False]
 
         if self.doc:
-            print('We find for the second Leray instance:', E2)
+            logging.info('The second Leray instance is \n {}.'.format(np.array(E2)))
 
         hodge = [0 for j in range(self.nfold+1)]
         done = True
@@ -2331,13 +2275,14 @@ class CICY:
                     if spacetable[k][k+q] != 0:
                         hspace[q] += [spacetable[k][k+q]]
             if type(hodge[q]) is not int:
+                # then we  have some maps
                 done = False
 
         if done:
             if self.doc:
                 end = time.time()
-                print('Such that we find for the hodge numbers:', hodge)
-                print('The calculation took:', end-start)
+                logging.info('Thus the Hodge number are {}.'.format(hodge))
+                logging.info('The calculation took {}.'.format(end-start))
             if space:
                 return hodge, hspace
             else:
@@ -2376,11 +2321,11 @@ class CICY:
                     solution = sp.solve(hodge[0]+hodge[2]-hodge[1]-euler, images, dict=True)
 
         if self.doc and short:
-            print('we find for the hodge numbers', hodge)
-            print('with the following constraints', solution)
-            print('coming from Euler characteristic and slope stability.')
+            logging.info('We find for the hodge numbers {}.'.format(hodge))
+            logging.info('Index and slope stability impose the following constraints: {}'.format(solution))
 
         if short:
+            # depending on scipy version solution is list or dictionary.
             if type(solution) is list:
                 if len(solution) != 0:
                     for j in range(len(hodge)):
@@ -2392,9 +2337,7 @@ class CICY:
                             hodge[j] = hodge[j].subs(solution)
 
         if self.doc and short:
-            print('After substituting we find:', hodge)
-            print('Next we calculate the relevant maps.')
-
+            logging.info('Thus we find h = {}'.format(hodge))
 
         # get all the maps we have to calculate
         maps = []
@@ -2411,7 +2354,7 @@ class CICY:
                 if maps[i] == images[k]:
                     maps_c[i] = self._rank_map(Table1[k][valj], Table1[k-1][valj], origin[k][valj], origin[k-1][valj])
                     if self.doc:
-                        print('the image', maps[i], 'is', maps_c[i][1])
+                        logging.info('The image {} has dimension {}.'.format(maps[i], maps_c[i][1]))
 
         # substitute all values
         for i in range(len(maps)):
@@ -2421,8 +2364,8 @@ class CICY:
 
         end = time.time()
         if self.doc:
-            print('hodge:', hodge)
-            print('The calculation took:', end-start)
+            logging.info('Finally, we find h = {}.'.format(hodge))
+            logging.info('The calculation took: {}.'.format(end-start))
         
         if space:
             return hodge, hspace
@@ -2440,5 +2383,14 @@ def apoly( n, deg):
                 yield (i,) + j        
     
 if __name__ == '__main__':
+
+    conf = np.array([[2,1,1,1], [2,2,0,1], [3,2,2,0]])
+    M = CICY(conf, log=2)
+    print(M.euler_characteristic(), M.euler_characteristic()/6)
+    M.hodge_numbers()
+    #M.line_co([2,-3,4])
+    conf2 = np.array([[1,2,0,0,0],[1,0,2,0,0],[1,0,0,2,0],[1,0,0,0,2],[3,1,1,1,1]])
+    T = CICY(conf2, log=2)
+    T.hodge_numbers()
     print('done')
     
