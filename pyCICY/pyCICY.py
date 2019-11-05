@@ -36,11 +36,15 @@ from texttable import Texttable
 import os
 # for documentation
 import logging
-
+# for SpaSM
+import subprocess
+import tempfile
+#cython map creation
+import create_map
 
 class CICY:
 
-    def __init__(self, conf, log=3, name='', dir='~/Documents/data/CICY/'):
+    def __init__(self, conf, log=3):
         """
         The CICY class. It allows for computation of various topological quantities.
         Main function is the computation of line bundle cohomologies.
@@ -51,11 +55,7 @@ class CICY:
             The CICY configuration matrix, including the first col for the
             projective spaces.
         log : int, optional
-            Documentation level. 1 - DEBUG, 2 - INFO, 3 -Warning, by default 3.
-        name : str, optional
-            Internal name of the CICY object; only used for debugging, default ''
-        dir : str, optional
-            path name for file save during debugging, by default '~/Documents/data/CICY/'.
+            Documentation level. 1 - DEBUG, 2 - INFO, 3 - WARNING, by default 3.
 
         Examples
         --------
@@ -72,7 +72,7 @@ class CICY:
         >>> M = CICY([[2,2,1],[3,1,3]])
         """
         start = time.time()
-
+        self.debug = False
 
         if log == 1:
             level = logging.DEBUG
@@ -83,8 +83,6 @@ class CICY:
 
         logging.basicConfig(format='%(levelname)s:%(message)s', level=level)
 
-        # needs to be defined in the beginning
-        self.debug = False
         # controls that no logging is done for init
         self.doc = False
         
@@ -135,10 +133,11 @@ class CICY:
         end = time.time()
         logging.info('Initialization took: {}.'.format(end-start))
         self.doc = True
+
         # artifacts from debugging; 
         # might be useful if you want to change some code
-        self.name = name
-        self.directory = os.path.join(os.path.expanduser(dir), self.name)
+        self.name = '_name'
+        self.directory = os.path.join(os.path.expanduser('~/Documents/data/CICY/'), self.name)
         self.debug = False
 
     def info(self):
@@ -1498,19 +1497,11 @@ class CICY:
 
         # enable doc again.
         self.doc = documentation
-
+        
         if self.nfold == 3:
 
             # we only need to determine h^21 or h^11 since they
             # are related via Euler characteristic
-
-            if self.doc:
-                logging.info('We find the following dimensions in the long exact cohomology sequence:')
-                logging.info('0 -> '+str(u_dim[0]-self.len)+' -> '+str(n_dim[0]))
-                logging.info('h^{2,1} -> '+str(u_dim[1])+' -> '+str(n_dim[1]))
-                logging.info('h^{1,1} -> '+str(u_dim[2])+' -> '+str(n_dim[2]))
-                logging.info('0 -> '+str(u_dim[3])+' -> '+str(n_dim[3]))
-
             # need to calculate kernel(H^1(X,S) -> H^1(X,N))
             if n_dim[1] == 0:
                 kernel = u_dim[1]
@@ -1519,7 +1510,17 @@ class CICY:
             else:
                 # generic surjective map, matches the results for all CICY threefolds in the literature
                 # We don't really need the space then.
-                kernel = np.argmax([0, u_dim[1]-n_dim[1]])
+                kernel = np.max([0, u_dim[1]-n_dim[1]])
+
+            if self.doc:
+                logging.info('We find the following dimensions in the long exact cohomology sequence of')
+                logging.info('T_X     -> T_A|_X   -> N \n ----------------------------')
+                logging.info('0       -> '+'{0: <8}'.format(str(u_dim[0]-self.len))+' -> '+str(n_dim[0]))
+                logging.info('h^{2,1} -> '+'{0: <8}'.format(str(u_dim[1]))+' -> '+str(n_dim[1]))
+                kernel222 = np.max([0, float(self.len)-u_dim[3]])
+                logging.info('h^{1,1} -> '+'{0: <8}'.format(str(u_dim[2]+kernel222))+' -> '+str(n_dim[2]))
+                logging.info('0       -> '+'{0: <8}'.format(str(u_dim[3]))+' -> '+str(n_dim[3]))
+
             # fill in h^21=h1 and h^11=h2
             h[1] = n_dim[0]-u_dim[0]+self.len+kernel
             h[2] = self.euler_characteristic()/2+h[1]
@@ -1531,11 +1532,13 @@ class CICY:
 
             if self.doc:
                 logging.info('We find the following dimensions in the long exact cohomology sequence:')
-                logging.info('0 -> '+str(u_dim[0]-self.len)+' -> '+str(n_dim[0]))
-                logging.info('h^{3,1} -> '+str(u_dim[1])+' -> '+str(n_dim[1]))
-                logging.info('h^{2,1} -> '+str(u_dim[2])+' -> '+str(n_dim[2]))
-                logging.info('h^{1,1} -> '+str(u_dim[3])+' -> '+str(n_dim[3]))
-                logging.info('0 -> '+str(u_dim[4])+' -> '+str(n_dim[4]))
+                logging.info('T_X     -> T_A|_X   -> N \n ----------------------------')
+                logging.info('0       -> '+'{0: <8}'.format(str(u_dim[0]-self.len))+' -> '+str(n_dim[0]))
+                logging.info('h^{3,1} -> '+'{0: <8}'.format(str(u_dim[1]))+' -> '+str(n_dim[1]))
+                logging.info('h^{2,1} -> '+'{0: <8}'.format(str(u_dim[2]))+' -> '+str(n_dim[2]))
+                kernel222 = np.max([0, float(self.len)-u_dim[4]])
+                logging.info('h^{1,1} -> '+'{0: <8}'.format(str(u_dim[3]+kernel222))+' -> '+str(n_dim[3]))
+                logging.info('0 -> '+'{0: <8}'.format(str(u_dim[4]))+' -> '+str(n_dim[4]))
 
             # need to calculate kernel(H^1(X,S) -> H^1(X,N))
             if n_dim[1] == 0:
@@ -1544,7 +1547,7 @@ class CICY:
                 kernel = 0
             else:
                 # surjective as for threefold
-                kernel = np.argmax([0, u_dim[1]-n_dim[1]])
+                kernel = np.max([0, u_dim[1]-n_dim[1]])
             # fill in h^31=h1 and h^21=h2 and h^11 = h3 and 
             # with some abuse of notation we redefine h4 := h^22 
             h[1] = n_dim[0]-u_dim[0]+self.len+kernel
@@ -1559,7 +1562,7 @@ class CICY:
                 h[4] = 44+4*h[3]-2*h[2]+4*h[1]
             else:
                 # assume surjectiv again
-                h[2] = n_dim[1]-(u_dim[1]-kernel)+np.argmax([0, u_dim[2]-n_dim[2]])
+                h[2] = n_dim[1]-(u_dim[1]-kernel)+np.max([0, u_dim[2]-n_dim[2]])
                 h[3] = self.euler_characteristic()/6+h[2]-h[1]-8
                 h[4] = 44+4*h[3]-2*h[2]+4*h[1]
             return h
@@ -1704,6 +1707,42 @@ class CICY:
         # the returned product list might be redundant as TxT will also yield a 'K3', etc.
         return direct, product
 
+    def _single_map_cython(self, V1, dim_V1, V2, dim_V2, t):
+        """
+        Determines the matrix of shape (dim_V2,dim_V1) for the map from V1 to V2.
+        Does the three main loops in cython.
+
+        Args:
+            V1 (list: int): Line bundle in bracket notation
+            dim_V1 (int): dimension of V1
+            V2 (list: in): Line bundle in bracket notation
+            dim_V2 (int): dimension of V2
+            t (int): specifies the normal section used for the map
+        
+        Returns:
+            (nested list: int): A matrix for the map between the two monomial basis.
+                with entries being the corresponding complex modulis.
+        """
+
+        V2 = [abs(entry) for entry in V2]
+        V1 = [abs(entry) for entry in V1]
+        source = self._makepoly(V1, dim_V1).astype(np.intc) #only consider positive exponents
+        moduli = np.subtract(V2, V1) # the modulimaps can contain derivatives
+        dim_mod = self._brackets_dim(moduli)
+        mod_polys = self._makepoly(moduli, dim_mod).astype(np.intc)
+        v2poly = self._makepoly(V2, dim_V2).astype(np.intc)
+        
+        if self.doc:
+            start = time.time()
+        # create the map in cython
+        smatrix = create_map(source, v2poly, mod_polys, self.moduli[t].astype(np.intc)).astype(np.int64)
+
+        if self.doc:
+            end = time.time()
+            logging.debug('Time: {}'.format(end-start))
+
+        return smatrix
+
     def _single_map(self, V1, dim_V1, V2, dim_V2, t):
         """Determine the matrix of shape (dim_V2,dim_V1) for the map from V1 to V2.
         
@@ -1777,7 +1816,7 @@ class CICY:
 
         return smatrix
 
-    def _rank_map(self, V1, V2, V1o, V2o):
+    def _rank_map(self, V1, V2, V1o, V2o, SpaSM=False):
         """Determines the rank of a map between two Leray entries.
         The function creates a matrix of shape(dim_v1,dim_v2)
 
@@ -1786,6 +1825,7 @@ class CICY:
             V2 (nested list: int): list of vector notations to which we map
             V1o (nested list: int): list of origins of all vectors in V1
             V2o (nested list: int): list of origins of all vectors in V2
+            SpaSM (bool): If True: uses SpaSM library, default False
         
         Returns:
             (list: int): dimensions of [kernel, image] of the map; image=rank of the matrix
@@ -1814,8 +1854,8 @@ class CICY:
             f_or = [[0 for i in range(len(V1))] for j in range(len(V2))]
             start = time.time()
 
-        #We create the matrix; int32 since we run into troubles with int16 and big matrices
-        matrix = np.zeros((dim_V2, dim_V1), dtype=np.int32)
+        #We create the matrix; int64 since we run into troubles with int16 and big matrices
+        matrix = np.zeros((dim_V2, dim_V1), dtype=np.int64)
 
         sign = 1
         for i in range(len(dim_bracket_V1)):
@@ -1848,7 +1888,7 @@ class CICY:
                     #    print('xrange:', [xmin, xmax, xmax-xmin], 'yrange:',[ymin, ymax, ymax-ymin], 'mapshape:', x.shape)
 
                     if self.doc:
-                        f_n[Many[j][1]][i] = [abs(a)-abs(b) for a,b in zip(V1[i], V2[Many[j][1]])]
+                        f_n[Many[j][1]][i] = [sign*abs(a-b) for a,b in zip(V1[i], V2[Many[j][1]])]
                         f_or[Many[j][1]][i] = [sign*j]                    
 
         if self.doc:
@@ -1866,20 +1906,104 @@ class CICY:
 
         # Bottleneck for large matrices;
         # needs a lot of memory and takes the most time.
-        rank = np.linalg.matrix_rank(matrix)
+        if SpaSM:
+            # increases the overhead, since the matrix has to be written to file
+            # however, the faster rank computation should more than compensate for this.
+            rank = self._spasm_rank(matrix)
+        else:
+            rank = np.linalg.matrix_rank(matrix)
 
         if self.doc:
             end = time.time()
-            logging.info('The map in terms of polynomials is given by \n {}.'.format(np.array(f_n)))
+            logging.info('The map in terms of polynomial degrees is given by \n {}.'.format(np.array(f_n)))
             logging.info('It has rank {}.'.format(rank))
             logging.info('Thus, dimension of kernel and image are {}.'.format([dim_V1-rank,rank]))
             logging.info('The rank calculation took {}.'.format(end-mid))
             logging.info('The total time needed for this map was {}.'.format(end-start))
-
-        if self.debug and self.doc:
             logging.debug('We had {} mapping via {} to {}.'.format(V1o, f_or, V2o))
 
         return [dim_V1-rank,rank]
+
+    def set_spasm_dir(self, dir):
+        r"""
+        Sets the Spasm directory.
+        Give the path to ./rank_hybrid of your SpaSM installation
+        
+        Parameters
+        ----------
+        dir : str
+            path to the spasm/bench directory.
+        """
+        if os.path.exists(dir):
+            self.spasm_dir = dir
+        else:
+            logging.warning('Could not find spasm bench directory.')
+
+    def _spasm_rank(self, matrix):
+        r"""
+        We use the SpaSM library to determine the rank.
+        In order to use SpaSM, you need a working installation
+        and provide the path to the SpaSM/bench directory using
+        M.set_spasm_dir(dir).
+
+        This function creates a temporary file, which is then
+        fed into SpaSM and subsequently deleted.
+
+        Parameters
+        ----------
+        matrix : int_array[dimV2, dimV1]
+            The map between two Leray entries.
+        
+        Returns
+        -------
+        int
+            The rank of the map.
+        """
+        start = time.time()
+        x_dim, y_dim = matrix.shape
+        row, col = np.nonzero(matrix)
+        
+        tmp_file, filename = tempfile.mkstemp()
+        # write file; tmp file needs utf-8 encoding.
+        header = str(x_dim)+' '+str(y_dim)+' M\n'
+        header = header.encode('utf-8')
+        os.write(tmp_file, header)
+        for r, c in zip(row, col):
+            line = str(r+1)+' '+str(c+1)+' '+str(matrix[r,c])+'\n'
+            line = line.encode('utf-8')
+            os.write(tmp_file, line)
+        close = '0 0 0'
+        close = close.encode('utf-8')
+        os.write(tmp_file, close)
+        mid = time.time()
+        # change directory; to spasm to run rank_hybrid
+        old_dir = os.getcwd()
+        full_filename = os.path.join(old_dir, filename)
+        assert os.path.exists(self.spasm_dir)
+        os.chdir(self.spasm_dir) # go to spasm
+        # run rank_hybrid
+        output = subprocess.getoutput("cat {} | ./rank_hybrid".format(full_filename))
+        os.chdir(old_dir)
+        # close the tmp_file
+        os.close(tmp_file)
+        end = time.time()
+        logging.info('SpaSM info.\n File creation took {}, rank calculation {} and total time {}.'.format(mid-start, end-mid, end-start))
+        # determine rank
+        rank = ""
+        # output looks like .... rank = XXX
+        for n in reversed(output):
+            if n != " ":
+                rank += n
+            else:
+                #we break since all digits have been saved
+                break
+        # we need to flip since the string is in reversed order
+        r = ""
+        for n in reversed(rank):
+            r += n
+        # make to int
+        r = int(r)
+        return r
 
     def _makepoly(self, rep, dim):
         r"""Takes a bracket notation and creates a monomial basis.
@@ -2140,10 +2264,12 @@ class CICY:
             return 'not implemented'
 
 
-    def line_co(self, L, space=False, short=True):
+    def line_co(self, L, space=False, short=True, SpaSM=False):
         """
-        The main function of this CICY toolkit. It determines the cohomology of a line bundle over the CY.
-        Based on the Leray spectral sequence and Bott-Borel-Weil theorem. Makes use of the index and vanishing theorem
+        The main function of this CICY toolkit. 
+        It determines the cohomology of a line bundle over the CY.
+        Based on the Leray spectral sequence and Bott-Borel-Weil theorem. 
+        By default makes use of the index and vanishing theorem
         to shorten computation time.
         
         Parameters
@@ -2151,9 +2277,14 @@ class CICY:
         L : array[nProj]
             The line bundle L.
         space : bool, optional
-            If True returns the cohomology in term of maps, rather than the dimension, by default False.
+            If True returns the cohomology in term of maps, 
+             rather than the dimension, by default False.
         short : bool, optional
-            If False, calculates the rank of all maps and does not make use of simplifications, by default True.
+            If False, calculates the rank of all maps and
+             does not make use of simplifications, by default True.
+        SpaSM : bool, optional
+            If True, uses the SpaSM library to determine the rank,
+             by default False.
         
         Returns
         -------
@@ -2171,6 +2302,12 @@ class CICY:
         >>> M = CICY([[2,2,1],[3,1,3]])
         >>> M.line_co([-4,3])
         [0,46,0,0]
+        another example using SpaSM:
+        >>> T = CICY(np.array([[1,2,0,0,0],[1,0,2,0,0],[1,0,0,2,0],[1,0,0,0,2],[3,1,1,1,1]]))
+        Next we give the SpaSM directory.
+        >>> T.set_spasm_dir('/home/robin/Documents/code/spasm/bench')
+        >>> T.line_co([3,-4,2,3,5], SpaSM=True)
+        [496, 80, 0, 0]
 
         References
         ----------
@@ -2179,7 +2316,18 @@ class CICY:
 
         .. [2] Heterotic and M-theory Compactifications for String Phenomenology, L. Anderson
             https://arxiv.org/abs/0808.3621
+
+        .. [3] SpaSM: a Sparse direct Solver Modulo p.
+            The SpaSM groub, http://github.com/cbouilla/spasm
         """
+
+        # TO DO: IMPLEMENT http://www.lifl.fr/~bouillag/spasm/index.html
+        if SpaSM:
+            if not os.path.exists(self.spasm_dir):
+                SpaSM = False
+                logging.warning('SpaSM has been disabled, since the directory does not exit.')
+                logging.warning('Use M.set_spasm_dir(dir) to set the path to SpaSM/bench first.')
+
         # Build our Leray tableaux E_1[k][j]
         start = time.time()
         V = self._line_to_BBW(L)
@@ -2342,7 +2490,7 @@ class CICY:
         for i in range(len(maps)):
             for k in range(len(images)):
                 if maps[i] == images[k]:
-                    maps_c[i] = self._rank_map(Table1[k][valj], Table1[k-1][valj], origin[k][valj], origin[k-1][valj])
+                    maps_c[i] = self._rank_map(Table1[k][valj], Table1[k-1][valj], origin[k][valj], origin[k-1][valj], SpaSM)
                     if self.doc:
                         logging.info('The image {} has dimension {}.'.format(maps[i], maps_c[i][1]))
 
@@ -2374,13 +2522,17 @@ def apoly( n, deg):
     
 if __name__ == '__main__':
 
-    conf = np.array([[2,1,1,1], [2,2,0,1], [3,2,2,0]])
-    M = CICY(conf, log=2)
-    print(M.euler_characteristic(), M.euler_characteristic()/6)
-    M.hodge_numbers()
+    #conf = np.array([[2,1,1,1], [2,2,0,1], [3,2,2,0]])
+    #M = CICY(conf, log=1)
+    #print(M.euler_characteristic(), M.euler_characteristic()/6)
+    #M.hodge_numbers()
     #M.line_co([2,-3,4])
-    conf2 = np.array([[1,2,0,0,0],[1,0,2,0,0],[1,0,0,2,0],[1,0,0,0,2],[3,1,1,1,1]])
-    T = CICY(conf2, log=2)
+    conf = np.array([[1,2,0,0,0],[1,0,2,0,0],[1,0,0,2,0],[1,0,0,0,2],[3,1,1,1,1]])
+    T = CICY(conf, log=1)
     T.hodge_numbers()
+    T.hodge_data()
+    #T.line_co([3,-4,2,3,5])
+    #T.set_spasm_dir('/home/robin/Documents/code/spasm/bench')
+    #T.line_co([3,-4,2,3,5], SpaSM=True)
     print('done')
     
