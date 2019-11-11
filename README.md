@@ -1,4 +1,4 @@
-# pyCICY
+# pyCICY - v0.02
 A python CICY toolkit, which allows the computation of line bundle cohomologies over Complete Intersection Calabi Yau manifolds. It further contains functions for determining various topological quantities, such as Chern classes, triple intersection and Hodge numbers.
 
 Installation is straighforwad with pip
@@ -11,11 +11,14 @@ pip install pyCICY
 
 v0.02 - Major overhaul. Bug fixes, more numpy,
         some efficiency upgrade, improved logging,
-		SpaSM support, relabeling of functions. - 4.11.2019.
+		SpaSM support, relabeling of functions. 
+		INFO: breaks backwards compatibility for some fcuntions.
+		- 11.11.2019.
+
 v0.01 - pyCICY toolkit made available - 29.5.2019.
 
 
-# Quickstart v0.02
+# Quickstart
 We import the CICY object from the module
 
 ```python
@@ -39,7 +42,7 @@ determines the line bundle cohomologies of the line bundle L = O(1,2,-4,1).
 Since the rank computation takes the most time we included [SpasM - github](http://github.com/cbouilla/spasm). A working installation of SpaSM is required.
 
 ```python
-T = CICY(np.array([[1,2,0,0,0],[1,0,2,0,0],[1,0,0,2,0],[1,0,0,0,2],[3,1,1,1,1]]))
+T = CICY([[1,2,0,0,0],[1,0,2,0,0],[1,0,0,2,0],[1,0,0,0,2],[3,1,1,1,1]])
 ```
 
 Next set the path to the SpaSM directory
