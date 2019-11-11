@@ -2,6 +2,3 @@ numpy
 scipy
 sympy
 texttable
-logging
-subprocess
-tempfile

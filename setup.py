@@ -26,8 +26,5 @@ setuptools.setup(
         "scipy",
         "sympy",
         "texttable",
-        "logging",
-        "subprocess",
-        "tempfile",
     ],
 )
