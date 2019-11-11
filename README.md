@@ -7,6 +7,61 @@ Installation is straighforwad with pip
 pip install pyCICY
 ```
 
+# Changelog
+
+v0.02 - Major overhaul. Bug fixes, more numpy,
+        some efficiency upgrade, improved logging,
+		SpaSM support, relabeling of functions. - 4.11.2019.
+v0.01 - pyCICY toolkit made available - 29.5.2019.
+
+
+# Quickstart v0.02
+We import the CICY object from the module
+
+```python
+from pyCICY import CICY
+```
+
+Next we define a CICY, for example the tetraquadric:
+
+```python
+M = CICY([[1,2],[1,2],[1,2],[1,2]])
+```
+
+Now we are able to do some calculations, e.g.
+
+```python
+M.line_co([1,2,-4,1])
+```
+
+determines the line bundle cohomologies of the line bundle L = O(1,2,-4,1).
+
+Since the rank computation takes the most time we included [SpasM - github](http://github.com/cbouilla/spasm). A working installation of SpaSM is required.
+
+```python
+T = CICY(np.array([[1,2,0,0,0],[1,0,2,0,0],[1,0,0,2,0],[1,0,0,0,2],[3,1,1,1,1]]))
+```
+
+Next set the path to the SpaSM directory
+
+```python
+T.set_spasm_dir('/home/robin/Documents/code/spasm/bench')
+```
+
+and do some computations:
+
+```python
+T.line_co([3,-4,2,3,5], SpaSM=True)
+```
+
+
+# Documentation
+
+Documentation can be found on readthedocs [pyCICY](https://pycicy.readthedocs.io/en/latest/).
+
+
+# Literature
+
 The module has been developed in the context of the following paper:
 
 ```tex
@@ -48,37 +103,19 @@ It is based on methods developed in
 	primaryClass   = "hep-th",
 	SLACcitation   = "%%CITATION = ARXIV:0808.3621;%%"
 }
-````
-
-# Quickstart
-We import the CICY object from the module
-
-```python
-from pyCICY import CICY
 ```
 
-Next we define a CICY, for example the tetraquadric:
-
-```python
-M = CICY('tetra', [[1,2],[1,2],[1,2],[1,2]])
+The SpaSM library can be found here: [github](http://github.com/cbouilla/spasm)
+```tex
+@manual{spasm,
+title = {{SpaSM}: a Sparse direct Solver Modulo $p$},
+author = {The SpaSM group},
+edition = {v1.2},
+year = {2017},
+note = {\url{http://github.com/cbouilla/spasm}}
+}
 ```
-
-Now we are able to do some calculations, e.g.
-
-```python
-M.line_co([1,2,-4,1])
-```
-
-determines the line bundle cohomologies of the line bundle L = O(1,2,-4,1).
-
-# Documentation
-
-Documentation can be found on readthedocs [pyCICY](https://pycicy.readthedocs.io/en/latest/).
-
-# Changelog
-
-v0.01 - pyCICY toolkit made available - 29.5.2019.
 
 # Useful software
 
-The pyCICY module is backwards compatible with python 2.7. Hence, it can be used in [Sage](http://www.sagemath.org/). Other useful packages for dealing with Calabi Yau manifolds in toric varieties are [cohomCalg](https://github.com/BenjaminJurke/cohomCalg/) and [PALP](http://hep.itp.tuwien.ac.at/~kreuzer/CY/CYpalp.html).
+The pyCICY module is (mostly) backwards compatible with python 2.7. Hence, it can be used in [Sage](http://www.sagemath.org/). Other useful packages for dealing with Calabi Yau manifolds in toric varieties are [cohomCalg](https://github.com/BenjaminJurke/cohomCalg/) and [PALP](http://hep.itp.tuwien.ac.at/~kreuzer/CY/CYpalp.html).

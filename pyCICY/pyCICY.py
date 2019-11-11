@@ -40,7 +40,6 @@ import logging
 import subprocess
 import tempfile
 #cython map creation
-import create_map
 
 class CICY:
 
@@ -1707,42 +1706,6 @@ class CICY:
         # the returned product list might be redundant as TxT will also yield a 'K3', etc.
         return direct, product
 
-    def _single_map_cython(self, V1, dim_V1, V2, dim_V2, t):
-        """
-        Determines the matrix of shape (dim_V2,dim_V1) for the map from V1 to V2.
-        Does the three main loops in cython.
-
-        Args:
-            V1 (list: int): Line bundle in bracket notation
-            dim_V1 (int): dimension of V1
-            V2 (list: in): Line bundle in bracket notation
-            dim_V2 (int): dimension of V2
-            t (int): specifies the normal section used for the map
-        
-        Returns:
-            (nested list: int): A matrix for the map between the two monomial basis.
-                with entries being the corresponding complex modulis.
-        """
-
-        V2 = [abs(entry) for entry in V2]
-        V1 = [abs(entry) for entry in V1]
-        source = self._makepoly(V1, dim_V1).astype(np.intc) #only consider positive exponents
-        moduli = np.subtract(V2, V1) # the modulimaps can contain derivatives
-        dim_mod = self._brackets_dim(moduli)
-        mod_polys = self._makepoly(moduli, dim_mod).astype(np.intc)
-        v2poly = self._makepoly(V2, dim_V2).astype(np.intc)
-        
-        if self.doc:
-            start = time.time()
-        # create the map in cython
-        smatrix = create_map(source, v2poly, mod_polys, self.moduli[t].astype(np.intc)).astype(np.int64)
-
-        if self.doc:
-            end = time.time()
-            logging.debug('Time: {}'.format(end-start))
-
-        return smatrix
-
     def _single_map(self, V1, dim_V1, V2, dim_V2, t):
         """Determine the matrix of shape (dim_V2,dim_V1) for the map from V1 to V2.
         
@@ -2522,17 +2485,5 @@ def apoly( n, deg):
     
 if __name__ == '__main__':
 
-    #conf = np.array([[2,1,1,1], [2,2,0,1], [3,2,2,0]])
-    #M = CICY(conf, log=1)
-    #print(M.euler_characteristic(), M.euler_characteristic()/6)
-    #M.hodge_numbers()
-    #M.line_co([2,-3,4])
-    conf = np.array([[1,2,0,0,0],[1,0,2,0,0],[1,0,0,2,0],[1,0,0,0,2],[3,1,1,1,1]])
-    T = CICY(conf, log=1)
-    T.hodge_numbers()
-    T.hodge_data()
-    #T.line_co([3,-4,2,3,5])
-    #T.set_spasm_dir('/home/robin/Documents/code/spasm/bench')
-    #T.line_co([3,-4,2,3,5], SpaSM=True)
     print('done')
     
