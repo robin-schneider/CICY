@@ -2265,9 +2265,9 @@ class CICY:
         >>> M = CICY([[2,2,1],[3,1,3]])
         >>> M.line_co([-4,3])
         [0,46,0,0]
-        another example using SpaSM:
-        >>> T = CICY(np.array([[1,2,0,0,0],[1,0,2,0,0],[1,0,0,2,0],[1,0,0,0,2],[3,1,1,1,1]]))
-        Next we give the SpaSM directory.
+        >>> #another example using SpaSM:
+        >>> T = CICY([[1,2,0,0,0],[1,0,2,0,0],[1,0,0,2,0],[1,0,0,0,2],[3,1,1,1,1]])
+        >>> #Next we give the SpaSM directory.
         >>> T.set_spasm_dir('/home/robin/Documents/code/spasm/bench')
         >>> T.line_co([3,-4,2,3,5], SpaSM=True)
         [496, 80, 0, 0]

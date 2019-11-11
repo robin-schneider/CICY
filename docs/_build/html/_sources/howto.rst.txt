@@ -8,24 +8,31 @@ Using pyCICY is straightforward. We import the CICY object
 and can then directly start by defining some manifolds.
 For example the famous quintic:
 
->>> Q = CICY('quintic', [[4,5]])
+>>> Q = CICY([[4,5]])
 
 or the tetra quadric:
 
->>> T = CICY('tetra', [[1,2],[1,2],[1,2],[1,2]])
+>>> T = CICY([[1,2],[1,2],[1,2],[1,2]])
 
 or the manifold #7833 of the CICYlist:
 
->>> M = CICY('7833', [[2,2,1],[3,1,3]])
+>>> M = CICY([[2,2,1],[3,1,3]])
 
 Calculating line bundle cohomologies is done via
 
 >>> M.line_co([-3,4])
 [0, 87, 0, 0]
 
-the toolkit also includes various other functions. An incomplete overview is given by
+another example using SpaSM:
 
->>> M.help()
-...
+>>> T = CICY([[1,2,0,0,0],[1,0,2,0,0],[1,0,0,2,0],[1,0,0,0,2],[3,1,1,1,1]])
 
-for a full list, consult the documentation.
+Next we give the SpaSM directory, e.g.
+
+>>> T.set_spasm_dir('/home/robin/Documents/code/spasm/bench')
+
+and compute the hodge numbers
+
+>>> T.line_co([3,-4,2,3,5], SpaSM=True)
+[496, 80, 0, 0]
+
