@@ -470,10 +470,10 @@ class CICY:
             delta = self.M[r][0]+1
         else:
             delta = 0
-        second = 2*self.c2(r,s)*self.c2(t,u)
+        second = 2.0*self.c2(r,s)*self.c2(t,u)
         c4 = (sumqqqq+second-delta)/4.0
         if not self.CY:
-            c4 += 1/2*self.c2(r,s)*self.c2(t,u)+self.c1(r)*self.c3(s,t,u)-self.c1(r)*self.c1(s)*self.c2(t,u)+1/4*self.c1(r)*self.c1(s)*self.c1(t)*self.c1(u)
+            c4 += 1/2.0*self.c2(r,s)*self.c2(t,u)+self.c1(r)*self.c3(s,t,u)-self.c1(r)*self.c1(s)*self.c2(t,u)+1/4.0*self.c1(r)*self.c1(s)*self.c1(t)*self.c1(u)
         return c4
 
     def fourth_chern(self):
@@ -1570,7 +1570,7 @@ class CICY:
             return [0, 20, 0]
         else:
             logging.error('Hodge calculation is only implemented for n=2,3,4 CY folds and'+
-                            'properly supported for 3 folds.')
+                            ' properly supported for 3 folds.')
 
     def is_favourable(self):
         """
