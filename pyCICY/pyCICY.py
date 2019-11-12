@@ -304,14 +304,14 @@ class CICY:
         >>> M.c2(0,1)
         2.5
         """
-        sumqq = np.sum([self.M[r][i]*self.M[s][i] for i in range(1,self.K+1)])
+        sumqq = np.sum([self.M[r][i]*self.M[s][i] for i in range(1,self.K+1)], dtype=np.float32)
         if r==s:
             delta = self.M[r][0]+1
         else:
             delta = 0
-        c2 =(sumqq-delta)/2 #Calabi-Yau
+        c2 = (sumqq-delta)/2.0 #Calabi-Yau
         if not self.CY:
-            c2 += self.c1(r)*self.c1(s)/2 #non Calabi-Yau
+            c2 += self.c1(r)*self.c1(s)/2.0 #non Calabi-Yau
         return c2
 
     def second_chern_all(self):
@@ -378,15 +378,15 @@ class CICY:
         >>> M.c3(0,1,1)
         -3.6666666666666665
         """
-        sumqqq = np.sum([self.M[r][i]*self.M[s][i]*self.M[t][i] for i in range(1,self.K+1)])
+        sumqqq = np.sum([self.M[r][i]*self.M[s][i]*self.M[t][i] for i in range(1,self.K+1)], dtype=np.float32)
         if r==s and r==t:
             delta = self.M[r][0]+1
         else:
             delta = 0
-        c3 = (delta-sumqqq)/3 # Calabi Yau
+        c3 = (delta-sumqqq)/3.0 # Calabi Yau
         if not self.CY:
             # for non CY
-            c3 += self.c1(r)*self.c2(s,t)-self.c1(r)*self.c1(s)*self.c1(t)/3
+            c3 += self.c1(r)*self.c2(s,t)-self.c1(r)*self.c1(s)*self.c1(t)/3.0
         return c3
         
     def third_chern(self):
@@ -465,13 +465,13 @@ class CICY:
         if self.nfold == 3 or self.nfold == 2:
             logging.error('{} is a Calabai Yau {}-fold.'.format(self.M, self.nfold))
         
-        sumqqqq = np.sum([self.M[r][i]*self.M[s][i]*self.M[t][i]*self.M[u][i] for i in range(1,self.K+1)])
+        sumqqqq = np.sum([self.M[r][i]*self.M[s][i]*self.M[t][i]*self.M[u][i] for i in range(1,self.K+1)], dtype=np.float32)
         if r==s and r==t and r==u:
             delta = self.M[r][0]+1
         else:
             delta = 0
         second = 2*self.c2(r,s)*self.c2(t,u)
-        c4 = (sumqqqq+second-delta)/4
+        c4 = (sumqqqq+second-delta)/4.0
         if not self.CY:
             c4 += 1/2*self.c2(r,s)*self.c2(t,u)+self.c1(r)*self.c3(s,t,u)-self.c1(r)*self.c1(s)*self.c2(t,u)+1/4*self.c1(r)*self.c1(s)*self.c1(t)*self.c1(u)
         return c4
@@ -1491,7 +1491,7 @@ class CICY:
             for j in range(self.nfold+1):
                 # add up to the dimensions
                 u_dim[j] += (self.M[i][0]+1)*unit_dimensions[i][j]
-                if unit_dimensions[i][j] != []:
+                if unit_dimensions[i][j] != 0:
                     u_space[j] += [unit_dimensions[i][j] for a in range(self.M[i][0]+1)]
 
         # enable doc again.
@@ -2485,5 +2485,8 @@ def apoly( n, deg):
     
 if __name__ == '__main__':
 
+    conf = np.array([[1,0,0,0,2], [1,0,2,0,0], [1,0,0,2,0],[1,2,0,0,0], [3,1,1,1,1]])
+    M = CICY(conf, log=2)
+    print(M.hodge_data())
     print('done')
     
