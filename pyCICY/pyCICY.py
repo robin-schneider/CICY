@@ -41,6 +41,9 @@ import subprocess
 import tempfile
 #cython map creation
 
+logging.basicConfig(format='%(name)s:%(levelname)s:%(message)s')
+logger = logging.getLogger('pyCICY')
+
 class CICY:
 
     def __init__(self, conf, log=3):
@@ -80,9 +83,9 @@ class CICY:
         elif log == 3:
             level = logging.WARNING
 
-        logging.basicConfig(format='%(levelname)s:%(message)s', level=level)
+        logger.setLevel(level=level)
 
-        # controls that no logging is done for init
+        # controls that no logger is done for init
         self.doc = False
         
         # define some variables which will make our life easier
@@ -96,9 +99,9 @@ class CICY:
         # check if actually CICY
         if not np.array_equal(self.first_chern(), np.zeros(self.len)):
             self.CY = False
-            logging.warning('The configuration matrix does not belong to a Calabi Yau. '+
+            logger.warning('The configuration matrix does not belong to a Calabi Yau. '+
                     'Its first Chern class is {}.'.format(self.first_chern()))
-            logging.warning('There is no official support for more general hypersurfaces.')
+            logger.warning('There is no official support for more general hypersurfaces.')
         else:
             self.CY = True
 
@@ -130,7 +133,7 @@ class CICY:
         self.c2_tensor = self.second_chern_all()
 
         end = time.time()
-        logging.info('Initialization took: {}.'.format(end-start))
+        logger.info('Initialization took: {}.'.format(end-start))
         self.doc = True
 
         # artifacts from debugging; 
@@ -463,7 +466,7 @@ class CICY:
         """
 
         if self.nfold == 3 or self.nfold == 2:
-            logging.error('{} is a Calabai Yau {}-fold.'.format(self.M, self.nfold))
+            logger.error('{} is a Calabai Yau {}-fold.'.format(self.M, self.nfold))
         
         sumqqqq = np.sum([self.M[r][i]*self.M[s][i]*self.M[t][i]*self.M[u][i] for i in range(1,self.K+1)], dtype=np.float32)
         if r==s and r==t and r==u:
@@ -741,7 +744,7 @@ class CICY:
                 [7., 2.]]])
         """
         if self.nfold != 3:
-            logging.warning('CICY is not a 3-fold.')
+            logger.warning('CICY is not a 3-fold.')
         if self.triple.shape[0] != 0:
             return self.triple
         # Since the calculation of drst for large K becomes very tedious
@@ -828,7 +831,7 @@ class CICY:
         """
 
         if self.nfold != 4:
-            logging.warning('CICY is not a 4-fold.')
+            logger.warning('CICY is not a 4-fold.')
 
         if self.quadruple.shape[0] != 0:
             return self.quadruple[r][s][t][u]
@@ -1447,8 +1450,8 @@ class CICY:
             test, text = self.is_directproduct()
             if test:
                 if self.doc:
-                    logging.info('The configuration matrix corresponds to a direct product:')
-                    logging.info(text)
+                    logger.info('The configuration matrix corresponds to a direct product:')
+                    logger.info(text)
                 # Apply Kunneth to get proper hodge data?
                 # we return zero list, to be consistent with the CICYlist
                 return h
@@ -1512,13 +1515,13 @@ class CICY:
                 kernel = np.max([0, u_dim[1]-n_dim[1]])
 
             if self.doc:
-                logging.info('We find the following dimensions in the long exact cohomology sequence of')
-                logging.info('T_X     -> T_A|_X   -> N \n ----------------------------')
-                logging.info('0       -> '+'{0: <8}'.format(str(u_dim[0]-self.len))+' -> '+str(n_dim[0]))
-                logging.info('h^{2,1} -> '+'{0: <8}'.format(str(u_dim[1]))+' -> '+str(n_dim[1]))
+                logger.info('We find the following dimensions in the long exact cohomology sequence of')
+                logger.info('T_X     -> T_A|_X   -> N \n ----------------------------')
+                logger.info('0       -> '+'{0: <8}'.format(str(u_dim[0]-self.len))+' -> '+str(n_dim[0]))
+                logger.info('h^{2,1} -> '+'{0: <8}'.format(str(u_dim[1]))+' -> '+str(n_dim[1]))
                 kernel222 = np.max([0, float(self.len)-u_dim[3]])
-                logging.info('h^{1,1} -> '+'{0: <8}'.format(str(u_dim[2]+kernel222))+' -> '+str(n_dim[2]))
-                logging.info('0       -> '+'{0: <8}'.format(str(u_dim[3]))+' -> '+str(n_dim[3]))
+                logger.info('h^{1,1} -> '+'{0: <8}'.format(str(u_dim[2]+kernel222))+' -> '+str(n_dim[2]))
+                logger.info('0       -> '+'{0: <8}'.format(str(u_dim[3]))+' -> '+str(n_dim[3]))
 
             # fill in h^21=h1 and h^11=h2
             h[1] = n_dim[0]-u_dim[0]+self.len+kernel
@@ -1526,18 +1529,18 @@ class CICY:
             return h
         elif self.nfold == 4:
             # first we check if direct product
-            logging.warning('Hodge numbers have only been checked for all 3-folds. \n'+
+            logger.warning('Hodge numbers have only been checked for all 3-folds. \n'+
                             'Double check your results with the literature.')
 
             if self.doc:
-                logging.info('We find the following dimensions in the long exact cohomology sequence:')
-                logging.info('T_X     -> T_A|_X   -> N \n ----------------------------')
-                logging.info('0       -> '+'{0: <8}'.format(str(u_dim[0]-self.len))+' -> '+str(n_dim[0]))
-                logging.info('h^{3,1} -> '+'{0: <8}'.format(str(u_dim[1]))+' -> '+str(n_dim[1]))
-                logging.info('h^{2,1} -> '+'{0: <8}'.format(str(u_dim[2]))+' -> '+str(n_dim[2]))
+                logger.info('We find the following dimensions in the long exact cohomology sequence:')
+                logger.info('T_X     -> T_A|_X   -> N \n ----------------------------')
+                logger.info('0       -> '+'{0: <8}'.format(str(u_dim[0]-self.len))+' -> '+str(n_dim[0]))
+                logger.info('h^{3,1} -> '+'{0: <8}'.format(str(u_dim[1]))+' -> '+str(n_dim[1]))
+                logger.info('h^{2,1} -> '+'{0: <8}'.format(str(u_dim[2]))+' -> '+str(n_dim[2]))
                 kernel222 = np.max([0, float(self.len)-u_dim[4]])
-                logging.info('h^{1,1} -> '+'{0: <8}'.format(str(u_dim[3]+kernel222))+' -> '+str(n_dim[3]))
-                logging.info('0 -> '+'{0: <8}'.format(str(u_dim[4]))+' -> '+str(n_dim[4]))
+                logger.info('h^{1,1} -> '+'{0: <8}'.format(str(u_dim[3]+kernel222))+' -> '+str(n_dim[3]))
+                logger.info('0 -> '+'{0: <8}'.format(str(u_dim[4]))+' -> '+str(n_dim[4]))
 
             # need to calculate kernel(H^1(X,S) -> H^1(X,N))
             if n_dim[1] == 0:
@@ -1569,7 +1572,7 @@ class CICY:
             # K3
             return [0, 20, 0]
         else:
-            logging.error('Hodge calculation is only implemented for n=2,3,4 CY folds and'+
+            logger.error('Hodge calculation is only implemented for n=2,3,4 CY folds and'+
                             ' properly supported for 3 folds.')
 
     def is_favourable(self):
@@ -1634,14 +1637,14 @@ class CICY:
                         if self.M[i][0] == 2:
                             product += [['T', [x]]]
                         else:
-                            logging.warning('Configuration matrix is not Calabi Yau: '+str([i,x]))
+                            logger.warning('Configuration matrix is not Calabi Yau: '+str([i,x]))
                     if trans[x][i] == 2:
                         direct = False
                         # redundant or wrong CICY
                         if self.M[i][0] == 1:
-                            logging.warning('The CICY is redundant here: '+str([i,x]))
+                            logger.warning('The CICY is redundant here: '+str([i,x]))
                         else:
-                            logging.warning('Configuration matrix is not Calabi Yau: '+str([i,x]))
+                            logger.warning('Configuration matrix is not Calabi Yau: '+str([i,x]))
                     if trans[x][i] == 4:
                         # K3
                         if self.M[i][0] == 3:
@@ -1650,7 +1653,7 @@ class CICY:
                             if self.nfold == 3:
                                 return direct, product
                         else:
-                            logging.warning('Configuration matrix is not Calabi Yau: '+str([i,x]))
+                            logger.warning('Configuration matrix is not Calabi Yau: '+str([i,x]))
                     if trans[x][i] == 5:
                         # Quintic
                         if self.M[i][0] == 4:
@@ -1660,10 +1663,10 @@ class CICY:
                                 return direct, product
                             if self.nfold == 3:
                                 direct = False
-                                logging.warning('Are you the Quintic?')
+                                logger.warning('Are you the Quintic?')
                                 return direct, product
                         else:
-                            logging.warning('Configuration matrix is not Calabi Yau: '+str([i,x]))
+                            logger.warning('Configuration matrix is not Calabi Yau: '+str([i,x]))
         """
         possible time efficiency improvement here
         # first we check if we found any products, then we should investigate the other factor
@@ -1775,7 +1778,7 @@ class CICY:
 
         if self.doc:
             end = time.time()
-            logging.debug('Time: {}'.format(end-start))
+            logger.debug('Time: {}'.format(end-start))
 
         return smatrix
 
@@ -1811,7 +1814,7 @@ class CICY:
         dim_V2 = sum(dim_bracket_V2)
 
         if self.doc:
-            logging.info('We determine the map from \n {} \n to \n {} \n with dimensions {} and {}.'.format(np.array(V1), np.array(V2),
+            logger.info('We determine the map from \n {} \n to \n {} \n with dimensions {} and {}.'.format(np.array(V1), np.array(V2),
                              [dim_bracket_V1, dim_V1], [dim_bracket_V2,dim_V2]))
             f_n = [[0 for i in range(len(V1))] for j in range(len(V2))]
             f_or = [[0 for i in range(len(V1))] for j in range(len(V2))]
@@ -1824,7 +1827,7 @@ class CICY:
         for i in range(len(dim_bracket_V1)):
             Many =  self._lorigin( V1o[i], V2o)
             if self.doc:
-                logging.debug('The bundle maps to {}'.format(Many))
+                logger.debug('The bundle maps to {}'.format(Many))
 
             # y-position in the big matrix
             ymin = sum(dim_bracket_V1[:i])
@@ -1856,15 +1859,15 @@ class CICY:
 
         if self.doc:
             mid = time.time()
-            logging.info('Creation of the map took: {}.'.format(mid-start))
+            logger.info('Creation of the map took: {}.'.format(mid-start))
             if self.debug:
                 if not os.path.exists(self.directory):
                     os.makedirs(self.directory)
                     #os.chdir(self.directory)
-                    logging.debug('directory created at {}.'.format(self.cdirectory))
+                    logger.debug('directory created at {}.'.format(self.cdirectory))
                 tmp_dir = os.path.join(self.cdirectory, str(V1)+str(V2)+'.csv')
                 np.savetxt(tmp_dir, matrix, delimiter=',', fmt='%i')
-                logging.debug('Map has been saved at {}.'.format(tmp_dir))
+                logger.debug('Map has been saved at {}.'.format(tmp_dir))
 
 
         # Bottleneck for large matrices;
@@ -1878,12 +1881,12 @@ class CICY:
 
         if self.doc:
             end = time.time()
-            logging.info('The map in terms of polynomial degrees is given by \n {}.'.format(np.array(f_n)))
-            logging.info('It has rank {}.'.format(rank))
-            logging.info('Thus, dimension of kernel and image are {}.'.format([dim_V1-rank,rank]))
-            logging.info('The rank calculation took {}.'.format(end-mid))
-            logging.info('The total time needed for this map was {}.'.format(end-start))
-            logging.debug('We had {} mapping via {} to {}.'.format(V1o, f_or, V2o))
+            logger.info('The map in terms of polynomial degrees is given by \n {}.'.format(np.array(f_n)))
+            logger.info('It has rank {}.'.format(rank))
+            logger.info('Thus, dimension of kernel and image are {}.'.format([dim_V1-rank,rank]))
+            logger.info('The rank calculation took {}.'.format(end-mid))
+            logger.info('The total time needed for this map was {}.'.format(end-start))
+            logger.debug('We had {} mapping via {} to {}.'.format(V1o, f_or, V2o))
 
         return [dim_V1-rank,rank]
 
@@ -1900,7 +1903,7 @@ class CICY:
         if os.path.exists(dir):
             self.spasm_dir = dir
         else:
-            logging.warning('Could not find spasm bench directory.')
+            logger.warning('Could not find spasm bench directory.')
 
     def _spasm_rank(self, matrix):
         r"""
@@ -1950,7 +1953,7 @@ class CICY:
         # close the tmp_file
         os.close(tmp_file)
         end = time.time()
-        logging.info('SpaSM info.\n File creation took {}, rank calculation {} and total time {}.'.format(mid-start, end-mid, end-start))
+        logger.info('SpaSM info.\n File creation took {}, rank calculation {} and total time {}.'.format(mid-start, end-mid, end-start))
         # determine rank
         rank = ""
         # output looks like .... rank = XXX
@@ -2047,7 +2050,7 @@ class CICY:
             return euler
         else:
             # TO DO implement this.
-            logging.warning('line_index() is only implemented for 3-folds.')
+            logger.warning('line_index() is only implemented for 3-folds.')
             return 'not implemented yet'   
 
     def line_co_euler(self, L, Leray=False):
@@ -2093,12 +2096,12 @@ class CICY:
         Table1, _ = self.Leray(V)        
         
         if self.doc:
-            logging.info('Determine index via Lerray table.')
+            logger.info('Determine index via Lerray table.')
             t = Texttable()
             t.add_row(['j\\K']+[k for k in range(self.K, -1,-1)])
             for j in range(self.dimA+1):
                 t.add_row([j]+[Table1[k][j] for k in range(self.K, -1,-1)])
-            logging.info('\n'+t.draw())
+            logger.info('\n'+t.draw())
         
         euler = 0
         for k in range(len(Table1)):
@@ -2108,7 +2111,7 @@ class CICY:
                         euler += (-1)**(k+j)*self._brackets_dim(entry) 
 
         if self.doc:
-            logging.info('The index is {}.'.format(euler))
+            logger.info('The index is {}.'.format(euler))
         return euler
 
     def l_slope(self, line, dual=False):
@@ -2174,7 +2177,7 @@ class CICY:
             else:
                 slope = False
             if self.doc:
-                logging.info('The slope stability constraint reads {}.'.format([constraint]))
+                logger.info('The slope stability constraint reads {}.'.format([constraint]))
             solution = [constraint]
             return slope, solution
         
@@ -2187,7 +2190,7 @@ class CICY:
 
         #kaehlerc = [x > 0 for x in ts]
         if self.doc:
-                logging.info('The slope stability constraint reads {}.'.format([constraint]))
+                logger.info('The slope stability constraint reads {}.'.format([constraint]))
         solution = [constraint]#+kaehlerc
         return slope, solution
 
@@ -2223,7 +2226,7 @@ class CICY:
             return constraint
         else:
             # TO DO. FIX THIS.
-            logging.info('line_slope() is only implemented for 3-folds.')
+            logger.info('line_slope() is only implemented for 3-folds.')
             return 'not implemented'
 
 
@@ -2288,8 +2291,8 @@ class CICY:
         if SpaSM:
             if not os.path.exists(self.spasm_dir):
                 SpaSM = False
-                logging.warning('SpaSM has been disabled, since the directory does not exit.')
-                logging.warning('Use M.set_spasm_dir(dir) to set the path to SpaSM/bench first.')
+                logger.warning('SpaSM has been disabled, since the directory does not exit.')
+                logger.warning('Use M.set_spasm_dir(dir) to set the path to SpaSM/bench first.')
 
         # Build our Leray tableaux E_1[k][j]
         start = time.time()
@@ -2303,15 +2306,15 @@ class CICY:
         hspace = [[] for i in range(self.nfold+1)]
         
         if self.doc:
-            logging.info('We determine the hodge numbers of {} over the CICY \n {}.'.format(L, self.M))
-            logging.info('The first Leray instance takes the form:')
+            logger.info('We determine the hodge numbers of {} over the CICY \n {}.'.format(L, self.M))
+            logger.info('The first Leray instance takes the form:')
             t = Texttable()
             t.add_row(['j\\K']+[k for k in range(self.K, -1,-1)])
             
             for j in range(self.dimA+1):
                 t.add_row([j]+[Table1[k][j] for k in range(self.K, -1,-1)])
             
-            logging.info('\n'+t.draw())
+            logger.info('\n'+t.draw())
             # change directory
             sdir = 'l'
             for a in L:
@@ -2365,7 +2368,7 @@ class CICY:
                                     spacetable[k][j] += [Table1[0][j-1],Table1[k][j], False]
 
         if self.doc:
-            logging.info('The second Leray instance is \n {}.'.format(np.array(E2)))
+            logger.info('The second Leray instance is \n {}.'.format(np.array(E2)))
 
         hodge = [0 for j in range(self.nfold+1)]
         done = True
@@ -2382,8 +2385,8 @@ class CICY:
         if done:
             if self.doc:
                 end = time.time()
-                logging.info('Thus the Hodge number are {}.'.format(hodge))
-                logging.info('The calculation took {}.'.format(end-start))
+                logger.info('Thus we find h^*={}.'.format(hodge))
+                logger.info('The calculation took {}.'.format(end-start))
             if space:
                 return hodge, hspace
             else:
@@ -2422,8 +2425,8 @@ class CICY:
                     solution = sp.solve(hodge[0]+hodge[2]-hodge[1]-euler, images, dict=True)
 
         if self.doc and short:
-            logging.info('We find for the hodge numbers {}.'.format(hodge))
-            logging.info('Index and slope stability impose the following constraints: {}'.format(solution))
+            logger.info('We find for the hodge numbers {}.'.format(hodge))
+            logger.info('Index and slope stability impose the following constraints: {}'.format(solution))
 
         if short:
             # depending on scipy version solution is list or dictionary.
@@ -2438,7 +2441,7 @@ class CICY:
                             hodge[j] = hodge[j].subs(solution)
 
         if self.doc and short:
-            logging.info('Thus we find h = {}'.format(hodge))
+            logger.info('Thus we find h = {}'.format(hodge))
 
         # get all the maps we have to calculate
         maps = []
@@ -2455,7 +2458,7 @@ class CICY:
                 if maps[i] == images[k]:
                     maps_c[i] = self._rank_map(Table1[k][valj], Table1[k-1][valj], origin[k][valj], origin[k-1][valj], SpaSM)
                     if self.doc:
-                        logging.info('The image {} has dimension {}.'.format(maps[i], maps_c[i][1]))
+                        logger.info('The image {} has dimension {}.'.format(maps[i], maps_c[i][1]))
 
         # substitute all values
         for i in range(len(maps)):
@@ -2465,8 +2468,8 @@ class CICY:
 
         end = time.time()
         if self.doc:
-            logging.info('Finally, we find h = {}.'.format(hodge))
-            logging.info('The calculation took: {}.'.format(end-start))
+            logger.info('Finally, we find h = {}.'.format(hodge))
+            logger.info('The calculation took: {}.'.format(end-start))
         
         if space:
             return hodge, hspace
@@ -2487,6 +2490,6 @@ if __name__ == '__main__':
 
     conf = np.array([[1,0,0,0,2], [1,0,2,0,0], [1,0,0,2,0],[1,2,0,0,0], [3,1,1,1,1]])
     M = CICY(conf, log=2)
-    print(M.hodge_data())
+    M.line_co([0,0,0,1,-2])
     print('done')
     
