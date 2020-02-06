@@ -2335,12 +2335,6 @@ class CICY:
                         if Table1[k+1][j] != 0:
                             E2[k][j] -= images[k+1]
                             spacetable[k][j] += [Table1[k+1][j],Table1[k][j], False]
-                        if j < len(Table1[k])-1:
-                            # can't be all negative charges
-                            if Table1[-1][j+1] != 0:
-                                # rare case for at least one zero in the charges
-                                E2[k][j] -= sum([self._brackets_dim(Table1[-1][j+1][a]) for a in range(len(Table1[-1][j+1]))])
-                                #spacetable[k][j] += [Table1[0][j-1],Table1[k][j], False]
                     else:
                         if Table1[k-1][j] != 0:
                             valj = j
@@ -2350,11 +2344,6 @@ class CICY:
                                 if Table1[k+1][j] != 0:
                                     E2[k][j] -= images[k+1]
                                     spacetable[k][j] += [Table1[k+1][j],Table1[k][j], False]
-                            else:
-                                if Table1[0][j-1] != 0:
-                                    # rare case for at least one zero in the charges
-                                    E2[k][j] -= sum([self._brackets_dim(Table1[0][j-1][a]) for a in range(len(Table1[0][j-1]))])
-                                    spacetable[k][j] += [Table1[0][j-1],Table1[k][j], False]
                         else:
                             E2[k][j] = dimension
                             spacetable[k][j] = [Table1[k][j],0, True]
@@ -2362,12 +2351,6 @@ class CICY:
                                 if Table1[k+1][j] != 0:
                                     E2[k][j] -= images[k+1]
                                     spacetable[k][j] += [Table1[k+1][j],Table1[k][j], False]
-                            else:
-                                if Table1[0][j-1] != 0:
-                                    # in principal we would have to determine the map here, but this case is only triggered for 
-                                    # when some charges are zero and then the map will fully inject
-                                    E2[k][j] -= sum([self._brackets_dim(Table1[0][j-1][a]) for a in range(len(Table1[0][j-1]))])
-                                    spacetable[k][j] += [Table1[0][j-1],Table1[k][j], False]
 
         if self.doc:
             logger.info('The second Leray instance is \n {}.'.format(np.array(E2)))
@@ -2490,8 +2473,5 @@ def apoly( n, deg):
     
 if __name__ == '__main__':
 
-    conf = np.array([[1,2], [1,2], [1,2],[1,2], [1,2]])
-    M = CICY(conf, log=2)
-    M.line_co([-3,-3,-3,-2,-2])
     print('done')
     
