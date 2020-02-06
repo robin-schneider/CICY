@@ -2335,10 +2335,12 @@ class CICY:
                         if Table1[k+1][j] != 0:
                             E2[k][j] -= images[k+1]
                             spacetable[k][j] += [Table1[k+1][j],Table1[k][j], False]
-                        if Table1[-1][j+1] != 0:
-                            # rare case for at least one zero in the charges
-                            E2[k][j] -= sum([self._brackets_dim(Table1[-1][j+1][a]) for a in range(len(Table1[-1][j+1]))])
-                            #spacetable[k][j] += [Table1[0][j-1],Table1[k][j], False]
+                        if j < len(Table1[k])-1:
+                            # can't be all negative charges
+                            if Table1[-1][j+1] != 0:
+                                # rare case for at least one zero in the charges
+                                E2[k][j] -= sum([self._brackets_dim(Table1[-1][j+1][a]) for a in range(len(Table1[-1][j+1]))])
+                                #spacetable[k][j] += [Table1[0][j-1],Table1[k][j], False]
                     else:
                         if Table1[k-1][j] != 0:
                             valj = j
@@ -2488,8 +2490,8 @@ def apoly( n, deg):
     
 if __name__ == '__main__':
 
-    conf = np.array([[1,0,0,0,2], [1,0,2,0,0], [1,0,0,2,0],[1,2,0,0,0], [3,1,1,1,1]])
+    conf = np.array([[1,2], [1,2], [1,2],[1,2], [1,2]])
     M = CICY(conf, log=2)
-    M.line_co([0,0,0,1,-2])
+    M.line_co([-3,-3,-3,-2,-2])
     print('done')
     
