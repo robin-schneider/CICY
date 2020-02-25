@@ -2114,7 +2114,7 @@ class CICY:
             logger.info('The index is {}.'.format(euler))
         return euler
 
-    def l_slope(self, line, dual=False):
+    def l_slope(self, line, dual=False, quick=True):
         r"""
         Determines the zero slope condition of a line bundle on a favourable CICY
 
@@ -2129,6 +2129,8 @@ class CICY:
             The line bundle L.
         dual : bool, optional
             If true, uses dual coordinates k_i = d_{ijk} t^j t^k, by default False.
+        quick : bool, optional
+            If true skips the sympy expression and returns (bool, 0), by default True.
         
         Returns
         -------
@@ -2144,7 +2146,7 @@ class CICY:
         Example
         -------
         >>> M = CICY([[2,2,1],[3,1,3]])
-        >>> M.l_slope([-4,3])
+        >>> M.l_slope([-4,3], quick=False)
         (True, [9.0*t0**2 + 18.0*t0*t1 - 22.0*t1**2])
         """
         # define the Kähler moduli
@@ -2156,6 +2158,17 @@ class CICY:
             return False, constraint
 
         if not dual:
+
+            mixed = False
+            signs = np.einsum('ijk,i->jk', self.triple, line)
+            signs = np.sign(signs+signs.T)
+            if -1 in signs and 1 in signs:
+                mixed = True
+            else:
+                mixed = False
+            if quick:
+                return mixed, 0
+
             # in terms of kähler moduli
             for i in range(self.len):
                 for j in range(self.len):
@@ -2163,23 +2176,10 @@ class CICY:
                         factor = line[i]*self.drst(i,j,k,1)
                         constraint += factor*ts[j]*ts[k]
 
-            coeff = sp.Poly(constraint, ts).coeffs()
-            #check if we have mixed coefficients
-            all = 0
-            for i in range(len(coeff)):
-                if coeff[i] > 0:
-                    all += 1
-                else:
-                    all -= 1
-            
-            if abs(all) != len(coeff):
-                slope = True
-            else:
-                slope = False
             if self.doc:
                 logger.info('The slope stability constraint reads {}.'.format([constraint]))
             solution = [constraint]
-            return slope, solution
+            return mixed, solution
         
         # we use the dual coordinates
         for i in range(len(line)):
