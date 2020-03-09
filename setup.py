@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pyCICY",
-    version="0.02",
+    version="0.03",
     author="Robin Schneider",
     author_email="robin.schneider@physics.uu.se",
     description="A python CICY toolkit",

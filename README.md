@@ -7,7 +7,14 @@ Installation is straighforwad with pip
 pip install pyCICY
 ```
 
+or to always get the latest version
+```console
+pip install git+https://github.com/robin-schneider/CICY.git
+```
+
 # Changelog
+
+v0.03 - Some bug fixes, more numpy
 
 v0.02 - Major overhaul. Bug fixes, more numpy,
         some efficiency upgrade, improved logging,
@@ -48,7 +55,7 @@ T = CICY([[1,2,0,0,0],[1,0,2,0,0],[1,0,0,2,0],[1,0,0,0,2],[3,1,1,1,1]])
 Next set the path to the SpaSM directory
 
 ```python
-T.set_spasm_dir('/home/robin/Documents/code/spasm/bench')
+T.set_spasm_dir('/home/user/pathto/spasm/bench')
 ```
 
 and do some computations:
@@ -81,7 +88,7 @@ The module has been developed in the context of the following paper:
 }
 ````
 
-It is based on methods developed in
+Further literature can be found here:
 
 ```tex
 @book{Hubsch:1992nu,
