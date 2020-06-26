@@ -114,6 +114,9 @@ class CICY:
         # defining normal bundle sections
         self.pmoduli, self.moduli = self._fill_moduli(9) 
         
+        # needed for quick calculations of index
+        self.c2_tensor = self.second_chern_all()
+
         self.h = self.hodge_data()
 
         # check if favourable, since needed for vanishing
@@ -128,9 +131,6 @@ class CICY:
                 self.fav = True
             else:
                 self.fav = False
-
-        # needed for quick calculations of index
-        self.c2_tensor = self.second_chern_all()
 
         end = time.time()
         logger.info('Initialization took: {}.'.format(end-start))
