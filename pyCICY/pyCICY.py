@@ -107,8 +107,12 @@ class CICY:
 
         #some topological quantities, which we only want to calculate once
         self.euler = 1 #set to 1 since all CICYs have negative.
-        self.triple = np.array([])
-        self.quadruple = np.array([])
+        if self.nfold == 3:
+            self.triple = np.array([])
+            self.triple = self.triple_intersection()
+        if self.nfold == 4:
+            self.quadruple = np.array([])
+            self.quadruple = self.quadruple_intersection()
         # need to define before hodge
         self.fav = False
         # defining normal bundle sections
@@ -2299,13 +2303,18 @@ class CICY:
             euler = np.round(self.line_co_euler(L))
             h = [0 for _ in range(self.nfold+1)]
             h[0] = euler
-            return h
+            if space:
+                return h, L
+            else:
+                return h
         if np.all(np.array(L) <= 0):
             euler = -1*np.round(self.line_co_euler(L))
             h = [0 for _ in range(self.nfold+1)]
             h[-1] = euler
-            return h
-
+            if space:
+                return h, L
+            else:
+                return h
         # Build our Leray tableaux E_1[k][j]
         start = time.time()
         V = self._line_to_BBW(L)
@@ -2484,6 +2493,7 @@ def apoly( n, deg):
                 yield (i,) + j        
     
 if __name__ == '__main__':
-
+    conf = np.array([[1,1,1],[1,1,1],[1,1,1],[1,1,1],[1,1,1]])
+    M1 = CICY(conf)
     print('done')
     
