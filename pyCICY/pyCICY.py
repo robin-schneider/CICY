@@ -2294,6 +2294,18 @@ class CICY:
                 logger.warning('SpaSM has been disabled, since the directory does not exit.')
                 logger.warning('Use M.set_spasm_dir(dir) to set the path to SpaSM/bench first.')
 
+        # quick Kodaira
+        if np.all(np.array(L) >= 0):
+            euler = np.round(self.line_co_euler(L))
+            h = [0 for _ in range(self.nfold+1)]
+            h[0] = euler
+            return h
+        if np.all(np.array(L) <= 0):
+            euler = -1*np.round(self.line_co_euler(L))
+            h = [0 for _ in range(self.nfold+1)]
+            h[-1] = euler
+            return h
+
         # Build our Leray tableaux E_1[k][j]
         start = time.time()
         V = self._line_to_BBW(L)
