@@ -1468,38 +1468,26 @@ class CICY:
         # We begin with \mathcal{N}
         # dimensions of all defining hypersurfaces
         normal_dimensions = np.zeros((self.K, self.nfold+1))
-        # and their spaces
-        normal_spaces = [[] for _ in range(self.K)]
         # The total dimensions
         n_dim = [0 for _ in range(self.nfold+1)]
-        # The total space
-        n_space = [[] for _ in range(self.nfold+1)]
         # we run over each defining hypersurface
         for i in range(self.K):
-            normal_dimensions[i], normal_spaces[i] = self.line_co(np.transpose(self.N)[i], space=True)
+            normal_dimensions[i] = self.line_co(np.transpose(self.N)[i])
             for j in range(self.nfold+1):
                 # add all dimension
                 n_dim[j] += normal_dimensions[i][j]
-                # add all spaces
-                if normal_spaces[i][j] != []:
-                    n_space[j] += [normal_spaces[i][j]]
 
         # Next \mathcal{R}
         # dimensions of all unit hypersurfaces
         unit_dimensions = np.zeros((self.len, self.nfold+1))
-        # and their spaces
-        unit_spaces = [[] for _ in range(self.len)]
         # The total dimensions
         u_dim = [0 for _ in range(self.nfold+1)]
         # The total space
-        u_space = [[] for _ in range(self.nfold+1)]
         for i in range(self.len):
-            unit_dimensions[i], unit_spaces[i] = self.line_co([0 if j != i else 1 for j in range(self.len)], space=True)
+            unit_dimensions[i] = self.line_co([0 if j != i else 1 for j in range(self.len)])
             for j in range(self.nfold+1):
                 # add up to the dimensions
                 u_dim[j] += (self.M[i][0]+1)*unit_dimensions[i][j]
-                if unit_dimensions[i][j] != 0:
-                    u_space[j] += [unit_dimensions[i][j] for a in range(self.M[i][0]+1)]
 
         # enable doc again.
         self.doc = documentation
@@ -1843,10 +1831,10 @@ class CICY:
                     for k in range(len(V1o)):
                         if V1o[i][k] == j:
                             if k%2 == 0:
-                                sign = -1
+                                sign = 1
                                 break
                             else:
-                                sign = 1
+                                sign = -1
                                 break
                     x = self._single_map(V1[i], dim_bracket_V1[i], V2[Many[j][1]], dim_bracket_V2[Many[j][1]], j)
                     # fill the appropiate row in matrix
@@ -1873,7 +1861,6 @@ class CICY:
                 np.savetxt(tmp_dir, matrix, delimiter=',', fmt='%i')
                 logger.debug('Map has been saved at {}.'.format(tmp_dir))
 
-
         # Bottleneck for large matrices;
         # needs a lot of memory and takes the most time.
         if SpaSM:
@@ -1894,27 +1881,11 @@ class CICY:
 
         return [dim_V1-rank,rank]
 
-    def set_spasm_dir(self, dir):
-        r"""
-        Sets the Spasm directory.
-        Give the path to ./rank_hybrid of your SpaSM installation
-        
-        Parameters
-        ----------
-        dir : str
-            path to the spasm/bench directory.
-        """
-        if os.path.exists(dir):
-            self.spasm_dir = dir
-        else:
-            logger.warning('Could not find spasm bench directory.')
-
     def _spasm_rank(self, matrix):
         r"""
         We use the SpaSM library to determine the rank.
-        In order to use SpaSM, you need a working installation
-        and provide the path to the SpaSM/bench directory using
-        M.set_spasm_dir(dir).
+        In order to use SpaSM, you need to compile the SpaSM code
+        and link rank_hybrid to your $PATH
 
         This function creates a temporary file, which is then
         fed into SpaSM and subsequently deleted.
@@ -1949,11 +1920,8 @@ class CICY:
         # change directory; to spasm to run rank_hybrid
         old_dir = os.getcwd()
         full_filename = os.path.join(old_dir, filename)
-        assert os.path.exists(self.spasm_dir)
-        os.chdir(self.spasm_dir) # go to spasm
         # run rank_hybrid
-        output = subprocess.getoutput("cat {} | ./rank_hybrid".format(full_filename))
-        os.chdir(old_dir)
+        output = subprocess.getoutput("cat {} | rank_hybrid".format(full_filename))
         # close the tmp_file
         os.close(tmp_file)
         end = time.time()
@@ -2234,7 +2202,7 @@ class CICY:
             return 'not implemented'
 
 
-    def line_co(self, L, space=False, short=True, SpaSM=False):
+    def line_co(self, L, short=True, SpaSM=False):
         """
         The main function of this CICY toolkit. 
         It determines the cohomology of a line bundle over the CY.
@@ -2246,12 +2214,13 @@ class CICY:
         ----------
         L : array[nProj]
             The line bundle L.
-        space : bool, optional
-            If True returns the cohomology in term of maps, 
-             rather than the dimension, by default False.
         short : bool, optional
             If False, calculates the rank of all maps and
              does not make use of simplifications, by default True.
+             Don't use True for lb with 0-charges, as the code fails
+             to pick up all relevant maps in those cases. The leray
+             table implicitly assumes that there is only one non vanishing row.
+             [TO DO FIX THIS]
         SpaSM : bool, optional
             If True, uses the SpaSM library to determine the rank,
              by default False.
@@ -2273,9 +2242,8 @@ class CICY:
         >>> M.line_co([-4,3])
         [0,46,0,0]
         >>> #another example using SpaSM:
+        >>> #assumes that rank_hybrid is in your $PATH
         >>> T = CICY([[1,2,0,0,0],[1,0,2,0,0],[1,0,0,2,0],[1,0,0,0,2],[3,1,1,1,1]])
-        >>> #Next we give the SpaSM directory.
-        >>> T.set_spasm_dir('/home/robin/Documents/code/spasm/bench')
         >>> T.line_co([3,-4,2,3,5], SpaSM=True)
         [496, 80, 0, 0]
 
@@ -2290,52 +2258,29 @@ class CICY:
         .. [3] SpaSM: a Sparse direct Solver Modulo p.
             The SpaSM groub, http://github.com/cbouilla/spasm
         """
-
-        # TO DO: IMPLEMENT http://www.lifl.fr/~bouillag/spasm/index.html
-        if SpaSM:
-            if not os.path.exists(self.spasm_dir):
-                SpaSM = False
-                logger.warning('SpaSM has been disabled, since the directory does not exit.')
-                logger.warning('Use M.set_spasm_dir(dir) to set the path to SpaSM/bench first.')
-
         # quick Kodaira
-        if np.all(np.array(L) >= 0):
-            euler = np.round(self.line_co_euler(L))
-            h = [0 for _ in range(self.nfold+1)]
-            h[0] = euler
-            if space:
-                return h, L
-            else:
-                return h
-        if np.all(np.array(L) <= 0):
-            euler = -1*np.round(self.line_co_euler(L))
-            h = [0 for _ in range(self.nfold+1)]
-            h[-1] = euler
-            if space:
-                return h, L
-            else:
-                return h
-        # Build our Leray tableaux E_1[k][j]
+        if short:
+            if np.array_equal(L, np.zeros(len(L))) and self.CY:
+                return [1, 0, 0, 1]
+            elif np.all(np.array(L) > 0):
+                return np.round([self.line_co_euler(L), 0, 0, 0])
+            elif np.all(np.array(L) < 0):
+                return np.round([0, 0, 0, -1*self.line_co_euler(L)])
+
+        # Build Leray tableaux E_1[k][j]
         start = time.time()
         V = self._line_to_BBW(L)
-        Table1, origin = self.Leray(V)
-        #Next E_2[k][j]
-        E2 = [[0 for j in range(self.dimA+1)] for k in range(self.K+1)]
-        
-        #space
-        spacetable = [[0 for j in range(self.dimA+1)] for k in range(self.K+1)]
-        hspace = [[] for i in range(self.nfold+1)]
-        
-        if self.doc:
-            logger.info('We determine the hodge numbers of {} over the CICY \n {}.'.format(L, self.M))
-            logger.info('The first Leray instance takes the form:')
-            t = Texttable()
-            t.add_row(['j\\K']+[k for k in range(self.K, -1,-1)])
-            
-            for j in range(self.dimA+1):
-                t.add_row([j]+[Table1[k][j] for k in range(self.K, -1,-1)])
-            
-            logger.info('\n'+t.draw())
+        Table1, origin = self.Leray(V)   
+
+        logger.info('We determine the hodge numbers of {} over the CICY \n {}.'.format(L, self.M))
+        logger.info('The first Leray instance takes the form:')
+        t = Texttable()
+        t.add_row(['j\\K']+[k for k in range(self.K, -1,-1)])
+        for j in range(self.dimA+1):
+            t.add_row([j]+[Table1[k][j] for k in range(self.K, -1,-1)])
+        logger.info('\n'+t.draw())
+
+        if self.debug:
             # change directory
             sdir = 'l'
             for a in L:
@@ -2343,35 +2288,91 @@ class CICY:
             self.cdirectory = os.path.join(self.directory, sdir)
 
         # variables for the image
-        images = sp.symbols('f0:'+str(self.K+2), integer=True)
+        # there can be at most two rows in the Leray table with maps.
+        images = [sp.symbols('f'+str(j)+r'\,(0:'+str(self.K+2)+')', integer=True) for j in range(self.dimA+1)]
         euler = 0
-        for k in range(len(Table1)):
-            for j in range(len(Table1[k])):
+        E2 = sp.Matrix([[0 for j in range(self.dimA+1)] for k in range(self.K+1)])
+        for j in range(self.dimA+1):
+            for k in range(self.K+1):
                 if Table1[k][j] != 0:
                     dimension = sum([self._brackets_dim(Table1[k][j][a]) for a in range(len(Table1[k][j]))]) 
                     euler += (-1)**(k+j)*dimension
-                    if k == 0:
-                        E2[k][j] = dimension
-                        spacetable[k][j] = [Table1[k][j],0, True]
-                        if Table1[k+1][j] != 0:
-                            E2[k][j] -= images[k+1]
-                            spacetable[k][j] += [Table1[k+1][j],Table1[k][j], False]
-                    else:
-                        if Table1[k-1][j] != 0:
-                            valj = j
-                            E2[k][j] = dimension-images[k]
-                            spacetable[k][j] = [Table1[k][j],Table1[k-1][j], True]
-                            if k < self.K:
-                                if Table1[k+1][j] != 0:
-                                    E2[k][j] -= images[k+1]
-                                    spacetable[k][j] += [Table1[k+1][j],Table1[k][j], False]
-                        else:
-                            E2[k][j] = dimension
-                            spacetable[k][j] = [Table1[k][j],0, True]
-                            if k < self.K:
-                                if Table1[k+1][j] != 0:
-                                    E2[k][j] -= images[k+1]
-                                    spacetable[k][j] += [Table1[k+1][j],Table1[k][j], False]
+                    E2[k,j] = dimension
+                    # first the dim(kernel), which is dimension -image(k)
+                    if k != 0 and Table1[k-1][j] != 0:
+                        E2[k,j] -= images[j][k]
+                    elif k == 0 and j < self.dimA and Table1[-1][j+1] != 0 and Table1[1][j] == 0:# 
+                        # special case at the edge; assume generic map
+                        E2[k,j] -= min(dimension, sum([self._brackets_dim(Table1[-1][j+1][a]) for a in range(len(Table1[-1][j+1]))]))
+                    # then quotient out the image, -image(k+1)
+                    if k < self.K and Table1[k+1][j] != 0:
+                        E2[k,j] -= images[j][k+1]
+                    elif k == self.K and Table1[0][j-1] != 0 and Table1[k-1][j] == 0:#
+                        #special case at the edge; assume generic map
+                        E2[k,j] -= min(dimension, sum([self._brackets_dim(Table1[0][j-1][a]) for a in range(len(Table1[0][j-1]))]))
+        if 0 in L:
+            #second order contribution for when there are zeros
+            #print(Table1)
+            #print(origin)
+            #print(E2)
+            E2prime = E2.copy()
+            contribution = np.ones(E2prime.shape).astype(np.bool)
+            for j in range(self.dimA+1):
+                for k in range(self.K+1):
+                    if E2[k,j] != 0:
+                        # upper tabular
+                        jprime = 1
+                        for p in range(k-2, -1,-1):
+                            if j-jprime >= 0 and p >= 0 and Table1[p][j-jprime] != 0 and contribution[p, j-jprime]:
+                                if type(E2[k,j]) is not int and type(E2[k,j]) is not sp.numbers.Integer:
+                                    sol = {}
+                                    for var in E2[k,j].free_symbols:
+                                        if var == images[j][k]:
+                                            sol[var] = self._rank_map(Table1[k][j], Table1[k-1][j], origin[k][j], origin[k-1][j], SpaSM)[1]
+                                        elif var == images[j][k+1]:
+                                            sol[var] = self._rank_map(Table1[k+1][j], Table1[k][j], origin[k+1][j], origin[k][j], SpaSM)[1]
+                                    # now fill that in all
+                                    #print(sol)
+                                    E2 = E2.subs(sol)
+                                    E2prime = E2prime.subs(sol)
+                                dim1 = E2[k,j]
+                                dim2 = sum([self._brackets_dim(Table1[p][j-jprime][a]) for a in range(len(Table1[p][j-jprime]))])
+                                if dim1 > dim2:
+                                    E2prime[k,j] -= E2[p,j-jprime]
+                                    E2prime[p,j-jprime] = 0
+                                #else:
+                                #    E2prime[k,j] = 0
+                                contribution[p, j-jprime] = False
+                            jprime += 1
+                        # lower tabular
+                        jprime = 1
+                        for p in range(k+2, self.K+1):
+                            if j+jprime < self.dimA+1 and Table1[p][j+jprime] != 0 and contribution[p, j+jprime]:
+                                if type(E2[k,j]) is not int and type(E2[k,j]) is not sp.numbers.Integer:
+                                    sol = {}
+                                    for var in E2[k,j].free_symbols:
+                                        if var == images[j][k]:
+                                            sol[var] = self._rank_map(Table1[k][j], Table1[k-1][j], origin[k][j], origin[k-1][j], SpaSM)[1]
+                                        elif var == images[j][k+1]:
+                                            sol[var] = self._rank_map(Table1[k+1][j], Table1[k][j], origin[k+1][j], origin[k][j], SpaSM)[1]
+                                    # now fill that in all
+                                    #print(sol)
+                                    E2 = E2.subs(sol)
+                                    E2prime = E2prime.subs(sol)
+                                dim1 = E2[k,j]
+                                dim2 = sum([self._brackets_dim(Table1[p][j+jprime][a]) for a in range(len(Table1[p][j+jprime]))])
+                                if dim1 > dim2:
+                                    E2prime[k,j] -= E2[p,j+jprime]
+                                    E2prime[p,j+jprime] = 0
+                                #else:
+                                #    E2prime[k,j] = 0
+                                contribution[p, j+jprime] = False
+                            jprime += 1
+            E2 = E2prime
+            #print(E2)
+
+        #flatten images
+        images = list(itertools.chain(*images))
 
         if self.doc:
             logger.info('The second Leray instance is \n {}.'.format(np.array(E2)))
@@ -2379,24 +2380,19 @@ class CICY:
         hodge = [0 for j in range(self.nfold+1)]
         done = True
         for q in range(self.nfold+1):
-            for k in range(len(E2)):
-                if (k+q) < len(E2[0]):
-                    hodge[q] += E2[k][k+q]
-                    if spacetable[k][k+q] != 0:
-                        hspace[q] += [spacetable[k][k+q]]
+            for m in range(self.K+1):
+                if m+q < self.dimA+1:
+                    hodge[q] += E2[m,m+q]
             if type(hodge[q]) is not int:
-                # then we  have some maps
+                # then we have some maps
                 done = False
-
+        #print(hodge)
         if done:
             if self.doc:
                 end = time.time()
                 logger.info('Thus we find h^*={}.'.format(hodge))
                 logger.info('The calculation took {}.'.format(end-start))
-            if space:
-                return hodge, hspace
-            else:
-                return hodge
+            return hodge
         
         # now there is a theorem stating if L is slope stable,
         # then H^0 = H^3 = 0 by Serre.
@@ -2407,25 +2403,20 @@ class CICY:
         else:
             stable = False
 
+        #Use euler + vanishing theorem to simplify
         if short:
             if self.nfold == 3:
                 if stable:
-                    hspace[0] = []
-                    hspace[3] = []
                     solution = sp.solve([hodge[0], hodge[3], hodge[2]-hodge[1]-euler], images, dict=True)
                 else:
                     solution = sp.solve(hodge[0]+hodge[2]-hodge[1]-hodge[3]-euler, images, dict=True)
             elif self.nfold == 4:
                 if stable:
-                    hspace[0] = []
-                    hspace[4] = []
                     solution = sp.solve([hodge[0], hodge[4], hodge[2]-hodge[1]-euler-hodge[3]], images, dict=True)
                 else:
                     solution = sp.solve(hodge[0]+hodge[2]+hodge[4]-hodge[1]-hodge[3]-euler, images, dict=True)
             elif self.nfold == 2:
                 if stable:
-                    hspace[0] = []
-                    hspace[2] = []
                     solution = sp.solve([hodge[0], hodge[2], (-1)*hodge[1]-euler], images, dict=True)
                 else:
                     solution = sp.solve(hodge[0]+hodge[2]-hodge[1]-euler, images, dict=True)
@@ -2459,29 +2450,25 @@ class CICY:
         # calculate all the maps
         # there could be a problem for line bundles with 0 charges when short=False
         maps_c = [0 for i in range(len(maps))]
-        for i in range(len(maps)):
-            for k in range(len(images)):
-                if maps[i] == images[k]:
-                    maps_c[i] = self._rank_map(Table1[k][valj], Table1[k-1][valj], origin[k][valj], origin[k-1][valj], SpaSM)
-                    if self.doc:
-                        logger.info('The image {} has dimension {}.'.format(maps[i], maps_c[i][1]))
+        for i, m in enumerate(maps):
+            name = m.name
+            pos = name.find(',')
+            j, k = int(name[1:pos]), int(name[pos+1:])
+            maps_c[i] = self._rank_map(Table1[k][j], Table1[k-1][j], origin[k][j], origin[k-1][j], SpaSM)
+            logger.info('The image {} has dimension {}.'.format(m, maps_c[i][1]))
 
         # substitute all values
         for i in range(len(maps)):
             for j in range(len(hodge)):
                 if type(hodge[j]) is not int:
-                    hodge[j] = hodge[j].subs(maps[i],maps_c[i][1])
+                    hodge[j] = hodge[j].subs(maps[i], maps_c[i][1])
 
         end = time.time()
         if self.doc:
             logger.info('Finally, we find h = {}.'.format(hodge))
             logger.info('The calculation took: {}.'.format(end-start))
         
-        if space:
-            return hodge, hspace
-        else:
-            return hodge
-
+        return hodge
 
 #@staticmethod
 def apoly( n, deg):
@@ -2493,7 +2480,33 @@ def apoly( n, deg):
                 yield (i,) + j        
     
 if __name__ == '__main__':
-    conf = np.array([[1,1,1],[1,1,1],[1,1,1],[1,1,1],[1,1,1]])
+    conf = np.array([[1,1,1,0,0],[1,1,1,0,0],[1,0,0,1,1],[1,0,0,1,1],[3,1,1,1,1]])
     M1 = CICY(conf)
+    print('----------------------------------------')
+    for i in range(-3,1):
+        for t in itertools.combinations_with_replacement(range(-3,4), r=4):
+            L = np.array(list(t)+[i])
+            #print(L)
+            h1 = M1.line_co(L)
+            h2 = M1.line_co(L, short=False)
+            h3 = M1.line_co(-L)[::-1]
+            h4 = M1.line_co(L, SpaSM=True)
+            e1 = round(M1.line_co_euler(L))
+            e2 = h1[0]-h1[1]+h1[2]-h1[3]
+            if np.min(h1) < 0:
+                print(L, h1, 'negative')
+            if e1-e2 != 0:
+                print(L, h1, e1, e2, 'euler')
+            if not np.array_equal(h1, h3):
+                print(L, h1, h3, 'serre')
+            if not np.array_equal(h1,h2):
+                print(L, h1, h2, 'short')
+            if not np.array_equal(h1,h4):
+                print(L, h1, h4, 'spasm')
+    #L = np.array([-2, 0, 0, 0,-3])
+    L = np.array([-3, -3, 3  ,0 ,-3])
+    print(M1.line_co(L))#, short=False
+    print(M1.line_co(L, short=False))#
+    print(M1.line_co(-L, short=False))
+    print(M1.line_co_euler(L))
     print('done')
-    

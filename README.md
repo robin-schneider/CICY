@@ -1,4 +1,4 @@
-# pyCICY - v0.02
+# pyCICY - v0.04
 A python CICY toolkit, which allows the computation of line bundle cohomologies over Complete Intersection Calabi Yau manifolds. It further contains functions for determining various topological quantities, such as Chern classes, triple intersection and Hodge numbers.
 
 Installation is straighforwad with pip
@@ -7,12 +7,14 @@ Installation is straighforwad with pip
 pip install pyCICY
 ```
 
-or to always get the latest version
+or get the latest version
 ```console
-pip install git+https://github.com/robin-schneider/CICY.git
+pip install --upgrade git+https://github.com/robin-schneider/CICY.git
 ```
 
 # Changelog
+v0.04  - cleaned up some code, fixed bug with semipositive line bundles.
+		 Improved performance of map creation.
 
 v0.03 - Some bug fixes, more numpy
 
@@ -46,16 +48,10 @@ M.line_co([1,2,-4,1])
 
 determines the line bundle cohomologies of the line bundle L = O(1,2,-4,1).
 
-Since the rank computation takes the most time we included [SpasM - github](http://github.com/cbouilla/spasm). A working installation of SpaSM is required.
+Since the rank computation takes the most time we included [SpasM - github](http://github.com/cbouilla/spasm). The *rank_hybrid* executable of SpaSM has to be in your $PATH.
 
 ```python
 T = CICY([[1,2,0,0,0],[1,0,2,0,0],[1,0,0,2,0],[1,0,0,0,2],[3,1,1,1,1]])
-```
-
-Next set the path to the SpaSM directory
-
-```python
-T.set_spasm_dir('/home/user/pathto/spasm/bench')
 ```
 
 and do some computations:
@@ -76,15 +72,18 @@ The module has been developed in the context of the following paper:
 
 ```tex
 @article{Larfors:2019sie,
-      author         = "Larfors, Magdalena and Schneider, Robin",
-      title          = "{Line bundle cohomologies on CICYs with Picard number
-                        two}",
-      year           = "2019",
-      eprint         = "1906.00392",
-      archivePrefix  = "arXiv",
-      primaryClass   = "hep-th",
-      reportNumber   = "UUITP-18/19",
-      SLACcitation   = "%%CITATION = ARXIV:1906.00392;%%"
+    author = "Larfors, Magdalena and Schneider, Robin",
+    title = "{Line bundle cohomologies on CICYs with Picard number two}",
+    eprint = "1906.00392",
+    archivePrefix = "arXiv",
+    primaryClass = "hep-th",
+    reportNumber = "UUITP-18/19",
+    doi = "10.1002/prop.201900083",
+    journal = "Fortsch. Phys.",
+    volume = "67",
+    number = "12",
+    pages = "1900083",
+    year = "2019"
 }
 ````
 
