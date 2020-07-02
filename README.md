@@ -1,4 +1,5 @@
 # pyCICY - v0.04
+
 A python CICY toolkit, which allows the computation of line bundle cohomologies over Complete Intersection Calabi Yau manifolds. It further contains functions for determining various topological quantities, such as Chern classes, triple intersection and Hodge numbers.
 
 Installation is straighforwad with pip
@@ -8,13 +9,14 @@ pip install pyCICY
 ```
 
 or get the latest version
+
 ```console
 pip install --upgrade git+https://github.com/robin-schneider/CICY.git
 ```
 
-# Changelog
+## Changelog
+
 v0.04  - cleaned up some code, fixed bug with semipositive line bundles.
-		 Improved performance of map creation.
 
 v0.03 - Some bug fixes, more numpy
 
@@ -27,7 +29,8 @@ v0.02 - Major overhaul. Bug fixes, more numpy,
 v0.01 - pyCICY toolkit made available - 29.5.2019.
 
 
-# Quickstart
+## Quickstart
+
 We import the CICY object from the module
 
 ```python
@@ -60,13 +63,11 @@ and do some computations:
 T.line_co([3,-4,2,3,5], SpaSM=True)
 ```
 
-
-# Documentation
+## Documentation
 
 Documentation can be found on readthedocs [pyCICY](https://pycicy.readthedocs.io/en/latest/).
 
-
-# Literature
+## Literature
 
 The module has been developed in the context of the following paper:
 
@@ -115,6 +116,7 @@ Further literature can be found here:
 ```
 
 The SpaSM library can be found here: [github](http://github.com/cbouilla/spasm)
+
 ```tex
 @manual{spasm,
 title = {{SpaSM}: a Sparse direct Solver Modulo $p$},
@@ -125,6 +127,6 @@ note = {\url{http://github.com/cbouilla/spasm}}
 }
 ```
 
-# Useful software
+## Useful software
 
 The pyCICY module is (mostly) backwards compatible with python 2.7. Hence, it can be used in [Sage](http://www.sagemath.org/). Other useful packages for dealing with Calabi Yau manifolds in toric varieties are [cohomCalg](https://github.com/BenjaminJurke/cohomCalg/) and [PALP](http://hep.itp.tuwien.ac.at/~kreuzer/CY/CYpalp.html).

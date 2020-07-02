@@ -2312,9 +2312,6 @@ class CICY:
                         E2[k,j] -= min(dimension, sum([self._brackets_dim(Table1[0][j-1][a]) for a in range(len(Table1[0][j-1]))]))
         if 0 in L:
             #second order contribution for when there are zeros
-            #print(Table1)
-            #print(origin)
-            #print(E2)
             E2prime = E2.copy()
             contribution = np.ones(E2prime.shape).astype(np.bool)
             for j in range(self.dimA+1):
@@ -2332,7 +2329,6 @@ class CICY:
                                         elif var == images[j][k+1]:
                                             sol[var] = self._rank_map(Table1[k+1][j], Table1[k][j], origin[k+1][j], origin[k][j], SpaSM)[1]
                                     # now fill that in all
-                                    #print(sol)
                                     E2 = E2.subs(sol)
                                     E2prime = E2prime.subs(sol)
                                 dim1 = E2[k,j]
@@ -2340,8 +2336,6 @@ class CICY:
                                 if dim1 > dim2:
                                     E2prime[k,j] -= E2[p,j-jprime]
                                     E2prime[p,j-jprime] = 0
-                                #else:
-                                #    E2prime[k,j] = 0
                                 contribution[p, j-jprime] = False
                             jprime += 1
                         # lower tabular
@@ -2355,8 +2349,6 @@ class CICY:
                                             sol[var] = self._rank_map(Table1[k][j], Table1[k-1][j], origin[k][j], origin[k-1][j], SpaSM)[1]
                                         elif var == images[j][k+1]:
                                             sol[var] = self._rank_map(Table1[k+1][j], Table1[k][j], origin[k+1][j], origin[k][j], SpaSM)[1]
-                                    # now fill that in all
-                                    #print(sol)
                                     E2 = E2.subs(sol)
                                     E2prime = E2prime.subs(sol)
                                 dim1 = E2[k,j]
@@ -2364,12 +2356,9 @@ class CICY:
                                 if dim1 > dim2:
                                     E2prime[k,j] -= E2[p,j+jprime]
                                     E2prime[p,j+jprime] = 0
-                                #else:
-                                #    E2prime[k,j] = 0
                                 contribution[p, j+jprime] = False
                             jprime += 1
             E2 = E2prime
-            #print(E2)
 
         #flatten images
         images = list(itertools.chain(*images))
@@ -2386,7 +2375,6 @@ class CICY:
             if type(hodge[q]) is not int:
                 # then we have some maps
                 done = False
-        #print(hodge)
         if done:
             if self.doc:
                 end = time.time()
@@ -2480,33 +2468,5 @@ def apoly( n, deg):
                 yield (i,) + j        
     
 if __name__ == '__main__':
-    conf = np.array([[1,1,1,0,0],[1,1,1,0,0],[1,0,0,1,1],[1,0,0,1,1],[3,1,1,1,1]])
-    M1 = CICY(conf)
-    print('----------------------------------------')
-    for i in range(-3,1):
-        for t in itertools.combinations_with_replacement(range(-3,4), r=4):
-            L = np.array(list(t)+[i])
-            #print(L)
-            h1 = M1.line_co(L)
-            h2 = M1.line_co(L, short=False)
-            h3 = M1.line_co(-L)[::-1]
-            h4 = M1.line_co(L, SpaSM=True)
-            e1 = round(M1.line_co_euler(L))
-            e2 = h1[0]-h1[1]+h1[2]-h1[3]
-            if np.min(h1) < 0:
-                print(L, h1, 'negative')
-            if e1-e2 != 0:
-                print(L, h1, e1, e2, 'euler')
-            if not np.array_equal(h1, h3):
-                print(L, h1, h3, 'serre')
-            if not np.array_equal(h1,h2):
-                print(L, h1, h2, 'short')
-            if not np.array_equal(h1,h4):
-                print(L, h1, h4, 'spasm')
-    #L = np.array([-2, 0, 0, 0,-3])
-    L = np.array([-3, -3, 3  ,0 ,-3])
-    print(M1.line_co(L))#, short=False
-    print(M1.line_co(L, short=False))#
-    print(M1.line_co(-L, short=False))
-    print(M1.line_co_euler(L))
+    
     print('done')
