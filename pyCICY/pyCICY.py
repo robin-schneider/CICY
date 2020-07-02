@@ -1472,7 +1472,8 @@ class CICY:
         n_dim = [0 for _ in range(self.nfold+1)]
         # we run over each defining hypersurface
         for i in range(self.K):
-            normal_dimensions[i] = self.line_co(np.transpose(self.N)[i])
+            # since normal is always positive
+            normal_dimensions[i] = self._brackets_dim(np.transpose(self.N)[i])
             for j in range(self.nfold+1):
                 # add all dimension
                 n_dim[j] += normal_dimensions[i][j]
@@ -2468,5 +2469,4 @@ def apoly( n, deg):
                 yield (i,) + j        
     
 if __name__ == '__main__':
-    
     print('done')
