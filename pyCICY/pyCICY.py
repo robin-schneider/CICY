@@ -23,13 +23,15 @@ v0.01 - pyCICY toolkit made available - 29.5.2019.
 """
 
 # libraries
-import itertools
+import itertools as it
 import numpy as np
 import sympy as sp
 import random
 from random import randint
 import scipy as sc
 import scipy.special
+from scipy.special import comb
+import matplotlib.pyplot as plt
 import math
 import time
 from texttable import Texttable
@@ -39,6 +41,7 @@ import logging
 # for SpaSM
 import subprocess
 import tempfile
+from copy import deepcopy
 #cython map creation
 
 logging.basicConfig(format='%(name)s:%(levelname)s:%(message)s')
@@ -707,7 +710,7 @@ class CICY:
             #1) take the counts -= 1 if fixed and compare if the left allowed
             #2) here it would be even more efficient to write a product that respects 
             #   the allowed combinations from count.
-            mu = itertools.product(*nonzero)
+            mu = it.product(*nonzero)
             # len(nonzero[0])*...*len(nonzero[K])
             # since we in principle know the complexity of both calculations
             # one could also do all the stuff before and then decide which way is faster
@@ -753,11 +756,11 @@ class CICY:
             return self.triple
         # Since the calculation of drst for large K becomes very tedious
         # we make use of symmetries
-        comb = itertools.combinations_with_replacement(range(self.len), 3)
+        comb = it.combinations_with_replacement(range(self.len), 3)
         d = np.zeros((self.len, self.len, self.len))
         for x in comb:
             drst = self.drst(x[0], x[1], x[2])
-            entries = itertools.permutations(x, 3)
+            entries = it.permutations(x, 3)
             # there will be some redundant elements,
             # but they will only have to be calculated once.
             for b in entries:
@@ -908,7 +911,7 @@ class CICY:
             #1) take the counts -= 1 if fixed and compare if the left allowed
             #2) here it would be even more efficient to write a product that respects 
             #   the allowed combinations from count, but I can't be bothered to do it atm.
-            mu = itertools.product(*nonzero)
+            mu = it.product(*nonzero)
             # len(nonzero[0])*...*len(nonzero[K])
             # since we in principle know the complexity here and from the other
             # one should also do all the stuff before and then decide which way is faster
@@ -956,11 +959,11 @@ class CICY:
             return self.quadruple
         # Since the calculation of drstu for large K becomes very tedious
         # we make use of symmetries
-        comb = itertools.combinations_with_replacement(range(self.len), 4)
+        comb = it.combinations_with_replacement(range(self.len), 4)
         d = np.zeros((self.len, self.len, self.len, self.len))
         for x in comb:
             drstu = self.drstu(x[0], x[1], x[2], x[3])
-            entries = itertools.permutations(x, 4)
+            entries = it.permutations(x, 4)
             # there will be some redundant elements,
             # but they will only have to be calculated once.
             for b in entries:
@@ -1118,8 +1121,8 @@ class CICY:
         # integer for each combination
         for a in range(self.len):
             # We create a list saving the combinations of N[a] as (A,B), (A,C),..
-            combvector = list(itertools.combinations(self.N[a], k))
-            originvector = list(itertools.combinations([l for l in range(self.K)], k))
+            combvector = list(it.combinations(self.N[a], k))
+            originvector = list(it.combinations([l for l in range(self.K)], k))
             # Next we need to determine the (wedge) products of all these x combinations
             # For that we take the sum of all entries in combvector
             for b in range(x):
@@ -1410,7 +1413,7 @@ class CICY:
         """
         #run a loop over all entries in or2
         origin = [[False, 500] for a in range(self.K)]
-        if or2 != 0:
+        if len(or2) != 0:
             for i in range(len(or2)):
                 if set(or2[i]).issubset(set(or1)):
                     origin[list(set(or1).difference(set(or2[i])))[0]] = [True, i]
@@ -1453,17 +1456,15 @@ class CICY:
         if self.K > 1:
             test, text = self.is_directproduct()
             if test:
-                if self.doc:
-                    logger.info('The configuration matrix corresponds to a direct product:')
-                    logger.info(text)
+                logger.info(text)
                 # Apply Kunneth to get proper hodge data?
                 # we return zero list, to be consistent with the CICYlist
                 return h
 
         # disable doc, since a lot of trivial line bundle computations
         # we are not particular interested in follow.
-        documentation = np.copy(self.doc)
-        self.doc = False
+        old_level = np.copy(logger.level)
+        logger.setLevel(level=logging.WARNING)
 
         # We begin with \mathcal{N}
         # dimensions of all defining hypersurfaces
@@ -1472,8 +1473,7 @@ class CICY:
         n_dim = [0 for _ in range(self.nfold+1)]
         # we run over each defining hypersurface
         for i in range(self.K):
-            # since normal is always positive
-            normal_dimensions[i] = self._brackets_dim(np.transpose(self.N)[i])
+            normal_dimensions[i] = self.line_co(np.transpose(self.N)[i])
             for j in range(self.nfold+1):
                 # add all dimension
                 n_dim[j] += normal_dimensions[i][j]
@@ -1489,9 +1489,6 @@ class CICY:
             for j in range(self.nfold+1):
                 # add up to the dimensions
                 u_dim[j] += (self.M[i][0]+1)*unit_dimensions[i][j]
-
-        # enable doc again.
-        self.doc = documentation
         
         if self.nfold == 3:
 
@@ -1507,33 +1504,32 @@ class CICY:
                 # We don't really need the space then.
                 kernel = np.max([0, u_dim[1]-n_dim[1]])
 
-            if self.doc:
-                logger.info('We find the following dimensions in the long exact cohomology sequence of')
-                logger.info('T_X     -> T_A|_X   -> N \n ----------------------------')
-                logger.info('0       -> '+'{0: <8}'.format(str(u_dim[0]-self.len))+' -> '+str(n_dim[0]))
-                logger.info('h^{2,1} -> '+'{0: <8}'.format(str(u_dim[1]))+' -> '+str(n_dim[1]))
-                kernel222 = np.max([0, float(self.len)-u_dim[3]])
-                logger.info('h^{1,1} -> '+'{0: <8}'.format(str(u_dim[2]+kernel222))+' -> '+str(n_dim[2]))
-                logger.info('0       -> '+'{0: <8}'.format(str(u_dim[3]))+' -> '+str(n_dim[3]))
+            logger.info('We find the following dimensions in the long exact cohomology sequence of')
+            logger.info('T_X     -> T_A|_X   -> N \n ----------------------------')
+            logger.info('0       -> '+'{0: <8}'.format(str(u_dim[0]-self.len))+' -> '+str(n_dim[0]))
+            logger.info('h^{2,1} -> '+'{0: <8}'.format(str(u_dim[1]))+' -> '+str(n_dim[1]))
+            kernel222 = np.max([0, float(self.len)-u_dim[3]])
+            logger.info('h^{1,1} -> '+'{0: <8}'.format(str(u_dim[2]+kernel222))+' -> '+str(n_dim[2]))
+            logger.info('0       -> '+'{0: <8}'.format(str(u_dim[3]))+' -> '+str(n_dim[3]))
 
             # fill in h^21=h1 and h^11=h2
             h[1] = n_dim[0]-u_dim[0]+self.len+kernel
             h[2] = self.euler_characteristic()/2+h[1]
+            # enable doc again.
+            logger.setLevel(level=int(old_level))
             return h
         elif self.nfold == 4:
             # first we check if direct product
             logger.warning('Hodge numbers have only been checked for all 3-folds. \n'+
                             'Double check your results with the literature.')
-
-            if self.doc:
-                logger.info('We find the following dimensions in the long exact cohomology sequence:')
-                logger.info('T_X     -> T_A|_X   -> N \n ----------------------------')
-                logger.info('0       -> '+'{0: <8}'.format(str(u_dim[0]-self.len))+' -> '+str(n_dim[0]))
-                logger.info('h^{3,1} -> '+'{0: <8}'.format(str(u_dim[1]))+' -> '+str(n_dim[1]))
-                logger.info('h^{2,1} -> '+'{0: <8}'.format(str(u_dim[2]))+' -> '+str(n_dim[2]))
-                kernel222 = np.max([0, float(self.len)-u_dim[4]])
-                logger.info('h^{1,1} -> '+'{0: <8}'.format(str(u_dim[3]+kernel222))+' -> '+str(n_dim[3]))
-                logger.info('0 -> '+'{0: <8}'.format(str(u_dim[4]))+' -> '+str(n_dim[4]))
+            logger.info('We find the following dimensions in the long exact cohomology sequence:')
+            logger.info('T_X     -> T_A|_X   -> N \n ----------------------------')
+            logger.info('0       -> '+'{0: <8}'.format(str(u_dim[0]-self.len))+' -> '+str(n_dim[0]))
+            logger.info('h^{3,1} -> '+'{0: <8}'.format(str(u_dim[1]))+' -> '+str(n_dim[1]))
+            logger.info('h^{2,1} -> '+'{0: <8}'.format(str(u_dim[2]))+' -> '+str(n_dim[2]))
+            kernel222 = np.max([0, float(self.len)-u_dim[4]])
+            logger.info('h^{1,1} -> '+'{0: <8}'.format(str(u_dim[3]+kernel222))+' -> '+str(n_dim[3]))
+            logger.info('0 -> '+'{0: <8}'.format(str(u_dim[4]))+' -> '+str(n_dim[4]))
 
             # need to calculate kernel(H^1(X,S) -> H^1(X,N))
             if n_dim[1] == 0:
@@ -1560,6 +1556,8 @@ class CICY:
                 h[2] = n_dim[1]-(u_dim[1]-kernel)+np.max([0, u_dim[2]-n_dim[2]])
                 h[3] = self.euler_characteristic()/6+h[2]-h[1]-8
                 h[4] = 44+4*h[3]-2*h[2]+4*h[1]
+            # enable doc again.
+            logger.setLevel(level=int(old_level))
             return h
         elif self.nfold == 2:
             # K3
@@ -1684,7 +1682,7 @@ class CICY:
             if self.K == 2 and i > 1:
                 return direct, product
             # be careful this can also become quite large
-            combs = list(itertools.combinations([k for k in range(self.K)], i))
+            combs = list(it.combinations([k for k in range(self.K)], i))
             for j in range(len(combs)):
                 x1 = np.sum(self.N[:, combs[j]], axis=1)
                 x2 = np.sign(np.subtract(np.sum(self.N, axis=1), x1))
@@ -1721,11 +1719,17 @@ class CICY:
         V1 = [abs(entry) for entry in V1]
         #smatrix = np.zeros((dim_V1, dim_V2), dtype=np.int16)
         smatrix = np.zeros((dim_V2, dim_V1), dtype=np.int32)
-        source = self._makepoly(V1, dim_V1) #only consider positive exponents
+        if np.array_equal(V1, np.zeros(self.len)):
+            source = np.zeros((1,np.sum(self.M[:,0])+self.len)).astype(np.int)
+        else:
+            source = self._makepoly(V1, dim_V1) #only consider positive exponents
         moduli = np.subtract(V2, V1) # the modulimaps can contain derivatives
         dim_mod = self._brackets_dim(moduli)
         mod_polys = self._makepoly(moduli, dim_mod)
-        v2poly = self._makepoly(V2, dim_V2)
+        if np.array_equal(V2, np.zeros(self.len)):
+            v2poly = np.zeros((1,np.sum(self.M[:,0])+self.len)).astype(np.int)
+        else:
+            v2poly = self._makepoly(V2, dim_V2)
         # loop over all monomials
 
         if self.doc:
@@ -1755,18 +1759,12 @@ class CICY:
                             # the map 1/mono -> 1/mono which is not actually a derivative.
                             #derivative *= int(np.product([z for z in range(x,x+y,-1)]))
                 if monomial != []:
-                    #brute force approach 
-                    #for k in range(len(v2poly)):
-                    #    if np.array_equal(monomial,v2poly[k]):
-                    #        smatrix[k][i] = self.moduli[t][j]*derivative
-                    #        #smatrix[i][k] = self.moduli[t][j]*derivative
-                    #        break
                     #np approach; factor of ~150 faster
                     k = np.where(np.all(monomial == v2poly, axis=1))[0][0]
                     smatrix[k][i] = self.moduli[t][j]#*derivative
                     #nicer approach which finds the position; not implemented yet.
                     #pos = self.decoder(monomial, V2, dim_V2)
-                    #smatrix[i][pos] = self.moduli[t][j]*derivative
+                    #smatrix[i][pos] = self.moduli[t][j]
         #print(smatrix)
 
         if self.doc:
@@ -1775,7 +1773,7 @@ class CICY:
 
         return smatrix
 
-    def _rank_map(self, V1, V2, V1o, V2o, SpaSM=False):
+    def _rank_map(self, V1, V2, V1o, V2o, SpaSM=False, rmap=False):
         """Determines the rank of a map between two Leray entries.
         The function creates a matrix of shape(dim_v1,dim_v2)
 
@@ -1785,6 +1783,7 @@ class CICY:
             V1o (nested list: int): list of origins of all vectors in V1
             V2o (nested list: int): list of origins of all vectors in V2
             SpaSM (bool): If True: uses SpaSM library, default False
+            rmap (bool): If True: returns the map instead, default False
         
         Returns:
             (list: int): dimensions of [kernel, image] of the map; image=rank of the matrix
@@ -1795,6 +1794,7 @@ class CICY:
             return [0,0]
         else:
             if V2 == 0:
+                print(V1)
                 dimension = np.array([self._brackets_dim(vector) for vector in V1])
                 return [np.sum(dimension), 0]
 
@@ -1861,6 +1861,9 @@ class CICY:
                 tmp_dir = os.path.join(self.cdirectory, str(V1)+str(V2)+'.csv')
                 np.savetxt(tmp_dir, matrix, delimiter=',', fmt='%i')
                 logger.debug('Map has been saved at {}.'.format(tmp_dir))
+
+        if rmap:
+            return matrix
 
         # Bottleneck for large matrices;
         # needs a lot of memory and takes the most time.
@@ -2066,21 +2069,21 @@ class CICY:
 
         # Build our Leray tableaux E_1[k][j]
         V = self._line_to_BBW(L)
-        Table1, _ = self.Leray(V)        
+        E1, _ = self.Leray(V)        
         
         if self.doc:
             logger.info('Determine index via Lerray table.')
             t = Texttable()
             t.add_row(['j\\K']+[k for k in range(self.K, -1,-1)])
             for j in range(self.dimA+1):
-                t.add_row([j]+[Table1[k][j] for k in range(self.K, -1,-1)])
+                t.add_row([j]+[E1[k][j] for k in range(self.K, -1,-1)])
             logger.info('\n'+t.draw())
         
         euler = 0
-        for k in range(len(Table1)):
-            for j in range(len(Table1[k])):
-                if Table1[k][j] != 0:
-                    for entry in Table1[k][j]:
+        for k in range(len(E1)):
+            for j in range(len(E1[k])):
+                if E1[k][j] != 0:
+                    for entry in E1[k][j]:
                         euler += (-1)**(k+j)*self._brackets_dim(entry) 
 
         if self.doc:
@@ -2122,13 +2125,11 @@ class CICY:
         >>> M.l_slope([-4,3], quick=False)
         (True, [9.0*t0**2 + 18.0*t0*t1 - 22.0*t1**2])
         """
-        # define the Kähler moduli
-        ts = sp.symbols('t0:'+str(len(line)))
         # find constraint
         constraint = 0
 
         if not self.fav:
-            return False, constraint
+            logger.warning('CICY is not favourable.')
 
         if not dual:
 
@@ -2141,7 +2142,8 @@ class CICY:
                 mixed = False
             if quick:
                 return mixed, 0
-
+            # define the Kähler moduli
+            ts = sp.symbols('t0:'+str(len(line)))
             # in terms of kähler moduli
             for i in range(self.len):
                 for j in range(self.len):
@@ -2149,11 +2151,12 @@ class CICY:
                         factor = line[i]*self.drst(i,j,k,1)
                         constraint += factor*ts[j]*ts[k]
 
-            if self.doc:
-                logger.info('The slope stability constraint reads {}.'.format([constraint]))
+            logger.info('The slope stability constraint reads {}.'.format([constraint]))
             solution = [constraint]
             return mixed, solution
         
+        # define the Kähler moduli
+        ts = sp.symbols('t0:'+str(len(line)))
         # we use the dual coordinates
         for i in range(len(line)):
             constraint += line[i]*ts[i]
@@ -2162,8 +2165,7 @@ class CICY:
             slope = True
 
         #kaehlerc = [x > 0 for x in ts]
-        if self.doc:
-                logger.info('The slope stability constraint reads {}.'.format([constraint]))
+        logger.info('The slope stability constraint reads {}.'.format([constraint]))
         solution = [constraint]#+kaehlerc
         return slope, solution
 
@@ -2202,6 +2204,193 @@ class CICY:
             logger.info('line_slope() is only implemented for 3-folds.')
             return 'not implemented'
 
+    def _orth_space_map(self, matrix):
+        r"""computes the projection of the kernel
+        """
+        orth_space = sc.linalg.null_space(matrix)
+        orth_proj = np.zeros((matrix.shape[1], matrix.shape[1]))
+        for vec in orth_space.T:
+            orth_proj += np.outer(vec,vec.T)
+        return orth_proj
+
+    def _fill_E2_space(self, E2, E1, origin, image, SpaSM):
+        """ fill the spaces with tuples 
+        (projectionmatrix, bracketnotation,
+         True if monomial else False, dimension) """
+        origin[0] = [[()] for _ in range(self.dimA+1)]
+        Espace = [[[] for _ in range(self.dimA+1)] for _ in range(self.K+1)]
+        sol = {}
+        image_maps = {}
+        for k in range(self.K+1):
+            for j in range(self.dimA+1):
+                if E2[k,j] != 0:
+                    if j < self.dimA+1:#and k-1 >= 0 and E2[k-1, j] != 0
+                        dim = np.sum([self._brackets_dim(entry) for entry in E1[k][j]])
+                        if type(E2[k,j]) is not int and type(E2[k,j]) is not sp.numbers.Integer:
+                            dim2 = 0
+                            maps = [False, False]
+                            # check if we have a non trivial kernel in the kernel map
+                            if image[j][k] in E2[k,j].free_symbols:
+                                if not image[j][k] in sol:
+                                    kernel_map = self._rank_map(E1[k][j], E1[k-1][j], origin[k][j], origin[k-1][j], SpaSM, True)
+                                    if not SpaSM:
+                                        sol[image[j][k]] = np.linalg.matrix_rank(kernel_map)
+                                    else:
+                                        sol[image[j][k]] = self._spasm_rank(kernel_map)
+                                    dim2 += sol[image[j][k]]
+                                    image_maps[image[j][k]] = np.copy(kernel_map)
+                                    maps[0] = True
+                                else:
+                                    kernel_map = image_maps[image[j][k]]
+                                    maps[0] = True
+                                    dim2 += sol[image[j][k]]
+                            # check if there is a non trivial image in the kernel map
+                            if image[j][k+1] in E2[k,j].free_symbols:
+                                if not image[j][k+1] in sol: 
+                                    image_map = self._rank_map(E1[k+1][j], E1[k][j], origin[k+1][j], origin[k][j], SpaSM, True)
+                                    if not SpaSM:
+                                        sol[image[j][k+1]] = np.linalg.matrix_rank(image_map)
+                                    else:
+                                        sol[image[j][k+1]] = self._spasm_rank(image_map)
+                                    dim2 += sol[image[j][k+1]]
+                                    image_maps[image[j][k+1]] = np.copy(image_map)
+                                    maps[1] = True
+                                else:
+                                    image_map = image_maps[image[j][k+1]]
+                                    dim2 += sol[image[j][k+1]]
+                                    maps[1] = True
+                            if dim - dim2 == 0:
+                                Espace[k][j] = []
+                            elif np.sum(maps) == 0:
+                                logger.debug('We have maps {} with dim {} at {}.'.format(maps, [dim, dim2], [k,j]))
+                                Espace[k][j] += [0, E1[k][j], origin[k][j], True, dim]
+                            elif np.sum(maps) == 1:
+                                logger.debug('We have maps {} with dim {} at {}.'.format(maps, [dim, dim2], [k,j]))
+                                if maps[0]:
+                                    Espace[k][j] = [np.copy(kernel_map), E1[k-1][j], origin[k-1][j], False, dim-sol[image[j][k]]]
+                                else:
+                                    Espace[k][j] = [np.copy(image_map), E1[k][j], origin[k][j], False, dim-sol[image[j][k+1]]]
+                            else:
+                                # should be zero di \circ di = 0?
+                                logger.warning('Shouldnt be here? di circ di = 0? dims: {}'.format([dim, dim2, maps]))
+                                Espace[k][j] = [np.matmul(image_map, kernel_map), E1[k-1][j], origin[k-1][j],
+                                                    False, dim-dim2]
+                        else:
+                            Espace[k][j] += [0, E1[k][j], origin[k][j], True, dim]
+        E2 = E2.subs(sol)
+        return Espace, E2
+
+    def _higher_map(self, space1, space2):
+
+        v1dim = [self._brackets_dim(space1[1][i]) for i in range(len(space1[1]))]
+        v2dim = [self._brackets_dim(space2[1][i]) for i in range(len(space2[1]))]
+        map = np.zeros((np.sum(v1dim), np.sum(v2dim)))
+        #print('origin:', space1[2], space2[2])
+        #print('spaces:', space1[1], space2[1])
+        #print('dim:', v1dim, v2dim)
+        nsec1 = len(space1[2][0])
+        nsec2 = len(space2[2][0])
+        for i, entry1 in enumerate(space1[1]):
+            for j, entry2 in enumerate(space2[1]):
+                missing_maps = list(set(space1[2][i]).difference(space2[2][j]))
+                if len(missing_maps) == nsec1-nsec2:
+                    # construct intermediate tensors
+                    inter_tensors = np.zeros((self.len, len(missing_maps)))
+                    for r in range(self.len):
+                        # there is some ambiguity here, when it comes
+                        # to raising and lowering new tensors.
+                        for t in it.product([1,-1], repeat=len(missing_maps)):
+                            degree = entry1[r]-entry2[r]
+                            for s, k in zip(t,missing_maps):
+                                degree += s*self.N[r, k]
+                            if degree == 0:
+                                inter_tensors[r] = np.array(t)
+                                break
+                    tmp_map = []
+                    for k in range(len(missing_maps)):
+                        if len(tmp_map) == 0:
+                            target = entry1+inter_tensors[:,k]*self.N[:, missing_maps[k]]
+                            target = target.astype(np.int)
+                            tmp_map = self._single_map(entry1, v1dim[i],  target, self._brackets_dim(target), missing_maps[k])
+                        else:
+                            target_next = target + inter_tensors[:,k] * self.N[:, missing_maps[k]]
+                            target_next = target_next.astype(np.int)
+                            tmp_map = np.matmul(tmp_map.T, self._single_map(target, self._brackets_dim(target), target_next, 
+                                                 self._brackets_dim(target_next), missing_maps[k]).T)
+                            target = np.copy(target_next)
+                    map[int(np.sum(v1dim[0:i])):int(np.sum(v1dim[0:i]))+v1dim[i], int(np.sum(v2dim[0:j])):int(np.sum(v2dim[0:j]))+v2dim[j]] += tmp_map
+        if not space1[3]:
+            if not space2[3]:
+                final_map = np.matmul(np.matmul(space1[0].T,map), space2[0])
+            else:
+                final_map = np.matmul(space1[0].T,map)
+        else:
+            if not space2[3]:
+                final_map = np.matmul(map, space2[0])
+            else:
+                final_map = map
+        return final_map, space2[2]
+
+    def _find_higher_E(self, E2, E1, origin, images, e, SpaSM):
+        # note filling E2 space changes E2
+        Emaps_1, E2 = self._fill_E2_space(E2, E1, origin, images, SpaSM)
+        E = E2.copy()
+        logger.debug('Higher Leray instances, starting with E2: \n {}, \n {}'.format(E, Emaps_1))
+        Enext = E.copy()
+        for i in range(2, self.K+2):
+            # fill all relevant maps/spaces
+            Emaps_2 = [[[] for _ in range(self.dimA+1)] for _ in range(self.K+1)]
+            euler = 0
+            for k in range(self.K+1):
+                for j in range(self.dimA+1):
+                    if E[k,j] != 0:
+                        kernel = E[k,j]
+                        maps = [False, False]
+                        if j-i+1 < self.dimA+1 and k-1 >= 0 and E[k-i, j-i+1] != 0:
+                            # fill the right spaces
+                            maps[0] = True
+                            kernel_map, kernel_origin = self._higher_map(Emaps_1[k][j], Emaps_1[k-i][j-i+1])
+                            if not SpaSM:
+                                kernel -= np.linalg.matrix_rank(kernel_map)
+                            else:
+                                kernel -= self._spasm_rank(kernel_map)
+                        image = 0
+                        if j+i-1 < self.dimA+1 and k+i < self.K+1 and E[k+i,j+i-1] != 0:
+                            maps[0] = False
+                            # fill the right spaces
+                            image_map, image_origin = self._higher_map(Emaps_1[k+i][j+i-1], Emaps_1[k][j])
+                            if not SpaSM:
+                                image = np.linalg.matrix_rank(image_map)
+                            else:
+                                image = self._spasm_rank(image_map)
+                        Enext[k,j] = max(0, kernel-image)
+                        euler += (-1)**(k+j)*Enext[k,j]
+                        if Enext[k,j] == 0:
+                            Emaps_2[k][j] = []
+                        elif np.sum(maps) == 0:
+                            Emaps_2[k][j] = Emaps_1[k][j] 
+                        elif np.sum(maps) == 1:
+                            logger.debug('Found higher maps {} with dim {}'.format(maps, [kernel, image]))
+                            if maps[0]:
+                                Emaps_2[k][j] = [np.copy(kernel_map), np.copy(Emaps_1[k-1][j-i+1]),
+                                                 np.copy(kernel_origin), False, np.copy(Enext[k,j])]
+                            else:
+                                Emaps_2[k][j] = [np.copy(image_map), np.copy(Emaps_1[k][j]), 
+                                                 np.copy(image_origin), False, np.copy(Enext[k,j])]
+                        else:
+                            # should be zero di \circ di = 0?
+                            logger.warning('Shouldnt be here? di circ di = 0?')
+                            Emaps_2[k][j] = [np.matmul(image_map, kernel_map), np.copy(Emaps_1[k-1][j-i+1]),
+                                             np.copy(kernel_origin), False, np.copy(Enext[k,j])]
+                        # if len(E.free coeff) == 1:
+                        #   use Euler to determine?
+            try:
+                assert euler == e
+            except AssertionError:
+                logger.warning('Euler violated at higher E_{} with delt = {}.'.format(i, euler-e))
+            Emaps_1 = deepcopy(Emaps_2)
+            E = Enext.copy()
+        return E
 
     def line_co(self, L, short=True, SpaSM=False):
         """
@@ -2218,10 +2407,6 @@ class CICY:
         short : bool, optional
             If False, calculates the rank of all maps and
              does not make use of simplifications, by default True.
-             Don't use True for lb with 0-charges, as the code fails
-             to pick up all relevant maps in those cases. The leray
-             table implicitly assumes that there is only one non vanishing row.
-             [TO DO FIX THIS]
         SpaSM : bool, optional
             If True, uses the SpaSM library to determine the rank,
              by default False.
@@ -2230,8 +2415,6 @@ class CICY:
         -------
         hodge: array[nfold+1]
             hodge numbers of the line bundle L.
-        hspace: nested list, optional
-            If space, then also a nested list of maps is returned.
 
         See also
         --------
@@ -2271,14 +2454,14 @@ class CICY:
         # Build Leray tableaux E_1[k][j]
         start = time.time()
         V = self._line_to_BBW(L)
-        Table1, origin = self.Leray(V)   
+        E1, origin = self.Leray(V)   
 
         logger.info('We determine the hodge numbers of {} over the CICY \n {}.'.format(L, self.M))
         logger.info('The first Leray instance takes the form:')
         t = Texttable()
         t.add_row(['j\\K']+[k for k in range(self.K, -1,-1)])
         for j in range(self.dimA+1):
-            t.add_row([j]+[Table1[k][j] for k in range(self.K, -1,-1)])
+            t.add_row([j]+[E1[k][j] for k in range(self.K, -1,-1)])
         logger.info('\n'+t.draw())
 
         if self.debug:
@@ -2295,77 +2478,31 @@ class CICY:
         E2 = sp.Matrix([[0 for j in range(self.dimA+1)] for k in range(self.K+1)])
         for j in range(self.dimA+1):
             for k in range(self.K+1):
-                if Table1[k][j] != 0:
-                    dimension = sum([self._brackets_dim(Table1[k][j][a]) for a in range(len(Table1[k][j]))]) 
+                if E1[k][j] != 0:
+                    dimension = sum([self._brackets_dim(E1[k][j][a]) for a in range(len(E1[k][j]))]) 
                     euler += (-1)**(k+j)*dimension
                     E2[k,j] = dimension
                     # first the dim(kernel), which is dimension -image(k)
-                    if k != 0 and Table1[k-1][j] != 0:
+                    if k != 0 and E1[k-1][j] != 0:
                         E2[k,j] -= images[j][k]
-                    elif k == 0 and j < self.dimA and Table1[-1][j+1] != 0 and Table1[1][j] == 0:# 
+                    elif k == 0 and j < self.dimA and E1[-1][j+1] != 0 and E1[1][j] == 0:# 
                         # special case at the edge; assume generic map
-                        E2[k,j] -= min(dimension, sum([self._brackets_dim(Table1[-1][j+1][a]) for a in range(len(Table1[-1][j+1]))]))
+                        E2[k,j] -= min(dimension, sum([self._brackets_dim(E1[-1][j+1][a]) for a in range(len(E1[-1][j+1]))]))
                     # then quotient out the image, -image(k+1)
-                    if k < self.K and Table1[k+1][j] != 0:
+                    if k < self.K and E1[k+1][j] != 0:
                         E2[k,j] -= images[j][k+1]
-                    elif k == self.K and Table1[0][j-1] != 0 and Table1[k-1][j] == 0:#
+                    elif k == self.K and E1[0][j-1] != 0 and E1[k-1][j] == 0:#
                         #special case at the edge; assume generic map
-                        E2[k,j] -= min(dimension, sum([self._brackets_dim(Table1[0][j-1][a]) for a in range(len(Table1[0][j-1]))]))
+                        E2[k,j] -= min(dimension, sum([self._brackets_dim(E1[0][j-1][a]) for a in range(len(E1[0][j-1]))]))
         if 0 in L:
             #second order contribution for when there are zeros
-            E2prime = E2.copy()
-            contribution = np.ones(E2prime.shape).astype(np.bool)
-            for j in range(self.dimA+1):
-                for k in range(self.K+1):
-                    if E2[k,j] != 0:
-                        # upper tabular
-                        jprime = 1
-                        for p in range(k-2, -1,-1):
-                            if j-jprime >= 0 and p >= 0 and Table1[p][j-jprime] != 0 and contribution[p, j-jprime]:
-                                if type(E2[k,j]) is not int and type(E2[k,j]) is not sp.numbers.Integer:
-                                    sol = {}
-                                    for var in E2[k,j].free_symbols:
-                                        if var == images[j][k]:
-                                            sol[var] = self._rank_map(Table1[k][j], Table1[k-1][j], origin[k][j], origin[k-1][j], SpaSM)[1]
-                                        elif var == images[j][k+1]:
-                                            sol[var] = self._rank_map(Table1[k+1][j], Table1[k][j], origin[k+1][j], origin[k][j], SpaSM)[1]
-                                    # now fill that in all
-                                    E2 = E2.subs(sol)
-                                    E2prime = E2prime.subs(sol)
-                                dim1 = E2[k,j]
-                                dim2 = sum([self._brackets_dim(Table1[p][j-jprime][a]) for a in range(len(Table1[p][j-jprime]))])
-                                if dim1 > dim2:
-                                    E2prime[k,j] -= E2[p,j-jprime]
-                                    E2prime[p,j-jprime] = 0
-                                contribution[p, j-jprime] = False
-                            jprime += 1
-                        # lower tabular
-                        jprime = 1
-                        for p in range(k+2, self.K+1):
-                            if j+jprime < self.dimA+1 and Table1[p][j+jprime] != 0 and contribution[p, j+jprime]:
-                                if type(E2[k,j]) is not int and type(E2[k,j]) is not sp.numbers.Integer:
-                                    sol = {}
-                                    for var in E2[k,j].free_symbols:
-                                        if var == images[j][k]:
-                                            sol[var] = self._rank_map(Table1[k][j], Table1[k-1][j], origin[k][j], origin[k-1][j], SpaSM)[1]
-                                        elif var == images[j][k+1]:
-                                            sol[var] = self._rank_map(Table1[k+1][j], Table1[k][j], origin[k+1][j], origin[k][j], SpaSM)[1]
-                                    E2 = E2.subs(sol)
-                                    E2prime = E2prime.subs(sol)
-                                dim1 = E2[k,j]
-                                dim2 = sum([self._brackets_dim(Table1[p][j+jprime][a]) for a in range(len(Table1[p][j+jprime]))])
-                                if dim1 > dim2:
-                                    E2prime[k,j] -= E2[p,j+jprime]
-                                    E2prime[p,j+jprime] = 0
-                                contribution[p, j+jprime] = False
-                            jprime += 1
-            E2 = E2prime
+            # this is messy and will take extra time
+            E2 = self._find_higher_E(E2, E1, origin, images, euler, SpaSM)
 
         #flatten images
-        images = list(itertools.chain(*images))
+        images = list(it.chain(*images))
 
-        if self.doc:
-            logger.info('The second Leray instance is \n {}.'.format(np.array(E2)))
+        logger.info('The second Leray instance is \n {}.'.format(np.array(E2)))
 
         hodge = [0 for j in range(self.nfold+1)]
         done = True
@@ -2415,7 +2552,7 @@ class CICY:
             logger.info('Index and slope stability impose the following constraints: {}'.format(solution))
 
         if short:
-            # depending on scipy version solution is list or dictionary.
+            # depending on sympy version solution is list or dictionary.
             if type(solution) is list:
                 if len(solution) != 0:
                     for j in range(len(hodge)):
@@ -2437,13 +2574,12 @@ class CICY:
         maps = list(set(maps))
 
         # calculate all the maps
-        # there could be a problem for line bundles with 0 charges when short=False
         maps_c = [0 for i in range(len(maps))]
         for i, m in enumerate(maps):
             name = m.name
             pos = name.find(',')
             j, k = int(name[1:pos]), int(name[pos+1:])
-            maps_c[i] = self._rank_map(Table1[k][j], Table1[k-1][j], origin[k][j], origin[k-1][j], SpaSM)
+            maps_c[i] = self._rank_map(E1[k][j], E1[k-1][j], origin[k][j], origin[k-1][j], SpaSM)
             logger.info('The image {} has dimension {}.'.format(m, maps_c[i][1]))
 
         # substitute all values
@@ -2458,6 +2594,226 @@ class CICY:
             logger.info('The calculation took: {}.'.format(end-start))
         
         return hodge
+    
+    def _find_pos(self, monomial, vdegrees, dim):
+        
+        start = 0
+        pos = 0
+        # loop over the whole ambient space
+        for i in range(self.len):
+            subpos = 0
+            used = 0
+            # find the subpos in each projective space
+            for j in range(self.dimA+1):
+                # loop over every coordinate in that projective space
+                for _ in range(monomial[start+j]):
+                    subpos += int(sc.special.binom(vdegrees[i]+self.M[i,0]-1-j-used, vdegrees[i]-used))
+                    used += 1
+            pos += dim[i]*subpos
+            start += self.M[i,0]+1
+
+        return pos
+
+    def _find_KI(self, I):
+        KI = 0
+        for tuples in it.product(I, repeat=3):
+            KI += self.triple[tuples]
+        return KI
+
+    def _find_KII(self, I):
+        KII = np.zeros(self.len-len(I))
+        complement = np.arange(self.len)
+        complement = np.delete(complement, I)
+        for i in range(self.len-len(I)):
+            for tuples in it.product(I, repeat=2):
+                KII[i] += self.triple[tuples[0], tuples[1], complement[i]]
+        return KII
+
+    def _find_KIII(self, I):
+        if len(I) == self.len:
+            return np.array(0)
+        KIJ = np.zeros((self.len-len(I), self.len-len(I)))
+        complement = np.arange(self.len)
+        complement = np.delete(complement, I)
+        for t1 in it.product(range(len(complement)), repeat=2):
+            for i in I:
+                KIJ[t1[0], t1[1]] += self.triple[i, complement[t1[0]], complement[t1[1]]]
+        return KIJ
+
+    def find_type(self, I):
+        r"""Finds the type of sending the Kähler moduli in
+        the list I to infinity.
+
+        Note: Implicitly assumes that M is favourable.
+        Subscript does not match the results found in
+        1910.02963.
+
+        Parameters
+        ----------
+        I : list
+            List of integers denoting the Kähler moduli
+            of the corresponding projective spaces.
+
+        Returns
+        -------
+        str
+            type II/III/IV
+        """
+        rank_1 = np.linalg.matrix_rank(self._find_KI(I))
+        rank_2 = np.linalg.matrix_rank(self._find_KII(I))
+        rank_3 = np.linalg.matrix_rank(self._find_KIII(I))
+        if rank_1 == 0:
+            if rank_2 == 1:
+                logger.debug('Type III_{} with ({})'.format(rank_3-2, [rank_1, rank_2, rank_3]))
+                return "III_"+str(rank_3-2)
+            else:
+                logger.debug('Type II_{} with ({})'.format(rank_3, [rank_1, rank_2, rank_3]))
+                return "II_"+str(rank_3)
+        else:
+            logger.debug('Type IV_{} with ({})'.format(rank_3, [rank_1, rank_2, rank_3]))
+            return "IV_"+str(rank_3)
+
+    def enhancement_diagram(self, fname):
+        """ computes enhancement diagramm as in 1910.02963
+        TO DO: fix linear dependencies for non simplicial kähler cones."""
+        if not self.fav:
+            logger.warning('CICY is not favourable results are going to be misleading.')
+        fig, ax = plt.subplots()
+        x_coordinates = []
+        y_coordinates = []
+        text = ["I_0"]
+        tuples = [[]]
+        for i in range(self.len+1):
+            y_coordinates += [np.array(int(comb(self.len, i))*[self.len-i])]
+            x_new = np.array(range(int(comb(self.len, i))))
+            x_coordinates += [x_new-np.mean(x_new)]
+            ax.scatter(x_coordinates[i], y_coordinates[i])
+            if i != 0:
+                tuples += [list(it.combinations(range(self.len), i))]
+                for t in it.combinations(range(self.len), i):
+                    text += [self.find_type(list(t))]
+        tuples += [list(it.combinations(range(self.len), self.len))]
+        plt.axis('off')
+        k = 0
+        # self.h11+1?
+        for i in range(self.len+1):
+            for j in range(len(x_coordinates[i])):
+                ax.annotate(text[k], (x_coordinates[i][j]+0.05, y_coordinates[i][j]+0.05))
+                k += 1
+            if i != self.len:
+                for l in range(len(x_coordinates[i])):
+                    for j in range(len(x_coordinates[i+1])):
+                        if len(tuples[i]) != 0:
+                            if len(set(tuples[i][l]).intersection(set(tuples[i+1][j]))) == len(tuples[i][l]):
+                                ax.plot([x_coordinates[i][l], x_coordinates[i+1][j]], [y_coordinates[i][l], y_coordinates[i+1][j]])
+                        else:
+                            ax.plot([x_coordinates[i][l], x_coordinates[i+1][j]], [y_coordinates[i][l], y_coordinates[i+1][j]])
+        fig.savefig(fname)
+        return fig
+
+    def exists_type_III(self):
+        """Determines if there exists a type III in 
+        the enhancement diagram.
+
+        Returns
+        -------
+        bool
+            True if type III
+        """
+        good_tuples = [[i] for i in range(self.len)]
+        for i in range(1, self.len+1):
+            # scan over good tuples combinations
+            tmp_tuples = []
+            for t in good_tuples:
+                type = self.find_type(t)
+                if type[0:3] == "III":
+                    return True
+                if type[0:2] == "II":
+                    tmp_tuples += [t]
+            #massage tmp_tuples to good_tuples
+            if len(tmp_tuples) == 0:
+                # no more good tuples left
+                return False
+            good_tuples = []
+            for i in range(len(tmp_tuples)):
+                for j in range(i+1,len(tmp_tuples)):
+                    if len(set(tmp_tuples[i]+tmp_tuples[j])) == len(tmp_tuples[i])+1:
+                        # then we added only one variable and came from two twos.
+                        good_tuples += [list(set(tmp_tuples[i]+tmp_tuples[j]))]
+            if len(good_tuples) == 0:
+                return False
+        return False
+
+    def is_kollar(self, divisor):
+        r"""Determines if a divisor satisfies the three Kollar criteria.
+        1) D^3 = 0
+        2) D * c2 =/= 0
+        3) D^2*D_i >= 0
+        Assumes that CICY is favourable.
+
+        Parameters
+        ----------
+        divisor : list(int)
+            Divisor with integer coefficients for each divisor
+            descending from the projective ambient spaces
+
+        Returns
+        -------
+        bool
+            True if it satisfies all criteria
+        """
+           
+        if -1 in np.sign(divisor):
+            logger.warning('D should be in Kähler cone.')
+
+        # D^3 = 0
+        if np.einsum('ijk,ijk', self.triple, np.einsum('i,j,k', divisor, divisor, divisor)) != 0:
+            return False
+        
+        # D * c2 =/= 0
+        if np.einsum('ijk,ijk', self.triple, np.einsum('i,jk', divisor, self.c2)) == 0:
+            return False
+
+        # D^2*D_i >= 0
+        for i in range(self.len):
+            if np.einsum('ijk,ijk', self.triple, np.einsum('i,j,k', divisor, divisor, [1 if j==i else 0 for j in range(self.len)])) < 0:
+                return False
+        
+        return True
+
+    def find_kollar(self, r_coeff = -1):
+        r"""
+        use M.p_array.tolist() to not mess up notation in TV.
+        """
+
+        # define TV
+        if not self.fav:
+            logger.warning('CICY is not favourable. Results are misleading.')
+
+        Kollar = []
+        # There are three necessary checks
+        # run over the divisor basis
+
+        if r_coeff > 0:
+            tuples = it.product(range(r_coeff), repeat=self.len)
+            n_conf = (r_coeff+1)**self.len
+            if n_conf > 5000:
+                logger.warning('You are scanning over {} configurations.'.format(n_conf))
+        else:
+            tuples = np.eye(self.len, dtype=np.int)
+
+        for coeff in tuples:
+
+            K = np.array(coeff)
+            # change this for non simplicial kähler cone
+            #for i, c in enumerate(coeff):
+            #    K += c*self.J[i]
+            
+            if self.is_kollar(K):
+                Kollar += [K]
+
+        logger.info('The following divisors satisfy the three necessary Kollar conditions:\n {}'.format(Kollar))
+        return Kollar
 
 #@staticmethod
 def apoly( n, deg):
@@ -2469,4 +2825,13 @@ def apoly( n, deg):
                 yield (i,) + j        
     
 if __name__ == '__main__':
+    conf = np.array([[1,1,1,0,0],[1,1,1,0,0],[1,0,0,1,1],[1,0,0,1,1],[3,1,1,1,1]])
+    M1 = CICY(conf, log=1)
+    print(M1.info())
+    print('----------------------------------------')
+    L = np.array([-2 , 0 , 0 , 0 ,-3])
+    #L = np.array([-2 , -2 , 3 , 0 ,-4])
+    print(M1.line_co(L))#, short=False
+    print(M1.line_co(-L))
+    print(M1.line_co_euler(L))
     print('done')
