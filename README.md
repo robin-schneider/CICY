@@ -1,4 +1,4 @@
-# pyCICY - v0.05
+# pyCICY - v0.5
 
 A python CICY toolkit, which allows the computation of line bundle cohomologies over Complete Intersection Calabi Yau manifolds. It further contains functions for determining various topological quantities, such as Chern classes, triple intersection and Hodge numbers.
 
@@ -16,19 +16,23 @@ pip install --upgrade git+https://github.com/robin-schneider/CICY.git
 
 ## Changelog
 
-v0.05 - added decoder, some more bugfixes.
+v0.5 - Added non generic maps for higher Leray maps. Such maps
+		occur for K >= 2 and when there are line bundles with 0-charges.
+		New code now has significant worse performance but should lead to
+		consistent results. Currently SpaSM is disabled for such maps.
+		Added some functions for finding enhancement diagrams and Kollars.
 
-v0.04 - cleaned up some code, fixed bug with semipositive line bundles.
+v0.4 - cleaned up some code, fixed bug with semipositive line bundles.
 
-v0.03 - Some bug fixes, more numpy
+v0.3 - Some bug fixes, more numpy
 
-v0.02 - Major overhaul. Bug fixes, more numpy,
+v0.2 - Major overhaul. Bug fixes, more numpy,
         some efficiency upgrade, improved logging,
 		SpaSM support, relabeling of functions. 
 		INFO: breaks backwards compatibility for some fcuntions.
 		- 11.11.2019.
 
-v0.01 - pyCICY toolkit made available - 29.5.2019.
+v0.1 - pyCICY toolkit made available - 29.5.2019.
 
 
 ## Quickstart

@@ -169,7 +169,7 @@ class CICY:
             print('The CICY {}'.format(self.M))
             print('has Hodge numbers {}.'.format(self.hodge_numbers()))
             print('Itsquadruple intersetion numbers are \n {}.'.format(self.quadruple_intersection()))
-            print('The second Chern class is {}.'.format(self.second_chern()))
+            print('The third Chern class is {}.'.format(self.third_chern()))
             print('The euler characteristic is {}'.format(self.euler_characteristic()))
             print('Finally, its defining polynomials have been choosen to be \n {}.'.format(self.def_poly()))
 
@@ -1297,7 +1297,7 @@ class CICY:
         if x != 500:
             # if cohomology is non zero we put it at the right j value
             E[0][x] = [[E_0[0][0]]]
-            #origin[0][x] = [0]
+            origin[0][x] = [()]
             for a in range(1, self.len):
                 E[0][x][0].append(E_0[a][0])
             # make line bracket notation
@@ -1472,6 +1472,7 @@ class CICY:
         # The total dimensions
         n_dim = [0 for _ in range(self.nfold+1)]
         # we run over each defining hypersurface
+        self.fav = False
         for i in range(self.K):
             normal_dimensions[i] = self.line_co(np.transpose(self.N)[i])
             for j in range(self.nfold+1):
@@ -2205,7 +2206,7 @@ class CICY:
             return 'not implemented'
 
     def _orth_space_map(self, matrix):
-        r"""computes the projection of the kernel
+        r"""Computes the projection of the kernel.
         """
         orth_space = sc.linalg.null_space(matrix)
         orth_proj = np.zeros((matrix.shape[1], matrix.shape[1]))
@@ -2214,10 +2215,35 @@ class CICY:
         return orth_proj
 
     def _fill_E2_space(self, E2, E1, origin, image, SpaSM):
-        """ fill the spaces with tuples 
-        (projectionmatrix, bracketnotation,
-         True if monomial else False, dimension) """
-        origin[0] = [[()] for _ in range(self.dimA+1)]
+        r"""Fills the spaces of E2. Each non trivial space is a list
+        with following entries [matrix, space, origin, simple, dim].
+
+        matrix - np.array projection of either kernel or image
+        space - degree in bracket notation.
+        origin - origin of entries
+        simple - bool, True if no previous maps involved
+        dim - dime of E2 at this entry
+
+        Parameters
+        ----------
+        E2 : sp.Matrix
+            E2 - second leray instance
+        E1 : list
+            nested list of E1
+        origin : list
+            nested list of the origin in E1
+        image : list
+            list of sympy variables describing the maps in E2
+        SpaSM : bool
+            enables SpaSM
+
+        Returns
+        -------
+        tuple(sp.matrix, nested list of spaces)
+            updated verison of E2 with substitution of maps,
+            and the corresponding spaces.
+        """
+        #origin[0] = [[()] for _ in range(self.dimA+1)]
         Espace = [[[] for _ in range(self.dimA+1)] for _ in range(self.K+1)]
         sol = {}
         image_maps = {}
@@ -2239,9 +2265,11 @@ class CICY:
                                         sol[image[j][k]] = self._spasm_rank(kernel_map)
                                     dim2 += sol[image[j][k]]
                                     image_maps[image[j][k]] = np.copy(kernel_map)
+                                    kernel_map = self._orth_space_map(kernel_map)
                                     maps[0] = True
                                 else:
                                     kernel_map = image_maps[image[j][k]]
+                                    kernel_map = self._orth_space_map(kernel_map)
                                     maps[0] = True
                                     dim2 += sol[image[j][k]]
                             # check if there is a non trivial image in the kernel map
@@ -2254,9 +2282,11 @@ class CICY:
                                         sol[image[j][k+1]] = self._spasm_rank(image_map)
                                     dim2 += sol[image[j][k+1]]
                                     image_maps[image[j][k+1]] = np.copy(image_map)
+                                    image_map = self._orth_space_map(image_map.T)
                                     maps[1] = True
                                 else:
                                     image_map = image_maps[image[j][k+1]]
+                                    image_map = self._orth_space_map(image_map.T)
                                     dim2 += sol[image[j][k+1]]
                                     maps[1] = True
                             if dim - dim2 == 0:
@@ -2267,13 +2297,13 @@ class CICY:
                             elif np.sum(maps) == 1:
                                 logger.debug('We have maps {} with dim {} at {}.'.format(maps, [dim, dim2], [k,j]))
                                 if maps[0]:
-                                    Espace[k][j] = [np.copy(kernel_map), E1[k-1][j], origin[k-1][j], False, dim-sol[image[j][k]]]
+                                    #Espace[k][j] = [np.copy(kernel_map), E1[k-1][j], origin[k-1][j], False, dim-sol[image[j][k]]]
+                                    Espace[k][j] = [np.copy(kernel_map), E1[k][j], origin[k][j], False, dim-sol[image[j][k]]]
                                 else:
                                     Espace[k][j] = [np.copy(image_map), E1[k][j], origin[k][j], False, dim-sol[image[j][k+1]]]
                             else:
                                 # should be zero di \circ di = 0?
-                                logger.warning('Shouldnt be here? di circ di = 0? dims: {}'.format([dim, dim2, maps]))
-                                Espace[k][j] = [np.matmul(image_map, kernel_map), E1[k-1][j], origin[k-1][j],
+                                Espace[k][j] = [np.matmul(image_map, kernel_map), E1[k][j], origin[k][j],
                                                     False, dim-dim2]
                         else:
                             Espace[k][j] += [0, E1[k][j], origin[k][j], True, dim]
@@ -2281,13 +2311,23 @@ class CICY:
         return Espace, E2
 
     def _higher_map(self, space1, space2):
+        r"""Generates the higher Leray map between two spaces.
 
+        Parameters
+        ----------
+        space1 : list
+            space1: [matrix, space, origin, simple, dim]
+        space2 : list
+            space: [matrix, space, origin, simple, dim]
+
+        Returns
+        -------
+        array(dim(space1), dim(space2))
+            Map from space1 to space2
+        """
         v1dim = [self._brackets_dim(space1[1][i]) for i in range(len(space1[1]))]
         v2dim = [self._brackets_dim(space2[1][i]) for i in range(len(space2[1]))]
         map = np.zeros((np.sum(v1dim), np.sum(v2dim)))
-        #print('origin:', space1[2], space2[2])
-        #print('spaces:', space1[1], space2[1])
-        #print('dim:', v1dim, v2dim)
         nsec1 = len(space1[2][0])
         nsec2 = len(space2[2][0])
         for i, entry1 in enumerate(space1[1]):
@@ -2315,15 +2355,19 @@ class CICY:
                         else:
                             target_next = target + inter_tensors[:,k] * self.N[:, missing_maps[k]]
                             target_next = target_next.astype(np.int)
-                            tmp_map = np.matmul(tmp_map.T, self._single_map(target, self._brackets_dim(target), target_next, 
-                                                 self._brackets_dim(target_next), missing_maps[k]).T)
+                            new_map = self._single_map(target, self._brackets_dim(target), target_next, 
+                                                 self._brackets_dim(target_next), missing_maps[k])
+                            if new_map.shape[1] == tmp_map.shape[0]:
+                                tmp_map = np.matmul(tmp_map.T, new_map.T)
+                            else:
+                                tmp_map = np.matmul(tmp_map, new_map.T)
                             target = np.copy(target_next)
                     map[int(np.sum(v1dim[0:i])):int(np.sum(v1dim[0:i]))+v1dim[i], int(np.sum(v2dim[0:j])):int(np.sum(v2dim[0:j]))+v2dim[j]] += tmp_map
         if not space1[3]:
             if not space2[3]:
-                final_map = np.matmul(np.matmul(space1[0].T,map), space2[0])
+                final_map = np.matmul(np.matmul(space1[0].T, map), space2[0])
             else:
-                final_map = np.matmul(space1[0].T,map)
+                final_map = np.matmul(space1[0].T, map)
         else:
             if not space2[3]:
                 final_map = np.matmul(map, space2[0])
@@ -2332,11 +2376,36 @@ class CICY:
         return final_map, space2[2]
 
     def _find_higher_E(self, E2, E1, origin, images, e, SpaSM):
+        r"""Finds and computes higher Leray maps for E_>2.
+        Currently does not support SpaSM.
+
+        Parameters
+        ----------
+        E2 : sp.Matrix
+            E2
+        E1 : table
+            list of lists describing E1
+        origin : list
+            origin of each entry in E1
+        images : list of sp.variables
+            list of all maps occuring in E2
+        e : int
+            euler char
+        SpaSM : bool
+            enables SpaSM
+
+        Returns
+        -------
+        sp.Matrix
+            E_K+1 last possible Leray instance
+        """
         # note filling E2 space changes E2
         Emaps_1, E2 = self._fill_E2_space(E2, E1, origin, images, SpaSM)
         E = E2.copy()
         logger.debug('Higher Leray instances, starting with E2: \n {}, \n {}'.format(E, Emaps_1))
         Enext = E.copy()
+        sol_space = {}
+        sol_dim = {}
         for i in range(2, self.K+2):
             # fill all relevant maps/spaces
             Emaps_2 = [[[] for _ in range(self.dimA+1)] for _ in range(self.K+1)]
@@ -2344,25 +2413,38 @@ class CICY:
             for k in range(self.K+1):
                 for j in range(self.dimA+1):
                     if E[k,j] != 0:
-                        kernel = E[k,j]
+                        kernel = 0
                         maps = [False, False]
                         if j-i+1 < self.dimA+1 and k-1 >= 0 and E[k-i, j-i+1] != 0:
-                            # fill the right spaces
                             maps[0] = True
-                            kernel_map, kernel_origin = self._higher_map(Emaps_1[k][j], Emaps_1[k-i][j-i+1])
-                            if not SpaSM:
-                                kernel -= np.linalg.matrix_rank(kernel_map)
+                            if not str((i,k,j)) in sol_dim:
+                                kernel_map, _ = self._higher_map(Emaps_1[k][j], Emaps_1[k-i][j-i+1])
+                                if not SpaSM:
+                                    kernel -= np.linalg.matrix_rank(kernel_map)
+                                else:
+                                    kernel -= self._spasm_rank(kernel_map)
+                                kernel_map = self._orth_space_map(kernel_map)
+                                sol_space[str((i,k,j))] = np.copy(kernel_map)
+                                sol_dim[str((i,k,j))] = np.copy(-1*kernel)
                             else:
-                                kernel -= self._spasm_rank(kernel_map)
+                                kernel_map = sol_space[str((i,k,j))]
+                                kernel -= sol_dim[str((i,k,j))]
+                        kernel += E[k,j]
                         image = 0
                         if j+i-1 < self.dimA+1 and k+i < self.K+1 and E[k+i,j+i-1] != 0:
-                            maps[0] = False
-                            # fill the right spaces
-                            image_map, image_origin = self._higher_map(Emaps_1[k+i][j+i-1], Emaps_1[k][j])
-                            if not SpaSM:
-                                image = np.linalg.matrix_rank(image_map)
+                            maps[1] = True
+                            if not str((i,k+i,j+i-1)) in sol_dim:
+                                image_map, image_origin = self._higher_map(Emaps_1[k+i][j+i-1], Emaps_1[k][j])
+                                if not SpaSM:
+                                    image = np.linalg.matrix_rank(image_map)
+                                else:
+                                    image = self._spasm_rank(image_map)
+                                image_map = self._orth_space_map(image_map.T)
+                                sol_space[str((i,k+i,j+i-1))] = np.copy(image_map)
+                                sol_dim[str((i,k+i,j+i-1))] = np.copy(image)
                             else:
-                                image = self._spasm_rank(image_map)
+                                image_map = sol_space[str((i,k+i,j+i-1))]
+                                image += sol_dim[str((i,k+i,j+i-1))]
                         Enext[k,j] = max(0, kernel-image)
                         euler += (-1)**(k+j)*Enext[k,j]
                         if Enext[k,j] == 0:
@@ -2372,33 +2454,37 @@ class CICY:
                         elif np.sum(maps) == 1:
                             logger.debug('Found higher maps {} with dim {}'.format(maps, [kernel, image]))
                             if maps[0]:
-                                Emaps_2[k][j] = [np.copy(kernel_map), np.copy(Emaps_1[k-1][j-i+1]),
-                                                 np.copy(kernel_origin), False, np.copy(Enext[k,j])]
+                                Emaps_2[k][j] = [kernel_map, np.copy(Emaps_1[k][j][1]),
+                                                 np.copy(Emaps_1[k][j][2]), False, np.copy(Enext[k,j])]
                             else:
-                                Emaps_2[k][j] = [np.copy(image_map), np.copy(Emaps_1[k][j]), 
+                                Emaps_2[k][j] = [image_map, np.copy(Emaps_1[k][j][1]), 
                                                  np.copy(image_origin), False, np.copy(Enext[k,j])]
                         else:
-                            # should be zero di \circ di = 0?
-                            logger.warning('Shouldnt be here? di circ di = 0?')
-                            Emaps_2[k][j] = [np.matmul(image_map, kernel_map), np.copy(Emaps_1[k-1][j-i+1]),
-                                             np.copy(kernel_origin), False, np.copy(Enext[k,j])]
+                            logger.debug('Found higher maps**2 {} with dim {}'.format(maps, [kernel, image]))
+                            Emaps_2[k][j] = [np.matmul(image_map, kernel_map), np.copy(Emaps_1[k][j][1]),
+                                             np.copy(Emaps_1[k][j][2]), False, np.copy(Enext[k,j])]
                         # if len(E.free coeff) == 1:
                         #   use Euler to determine?
             try:
                 assert euler == e
             except AssertionError:
-                logger.warning('Euler violated at higher E_{} with delt = {}.'.format(i, euler-e))
+                logger.warning('Euler violated at higher E_{} with delta = {}.'.format(i, euler-e))
             Emaps_1 = deepcopy(Emaps_2)
             E = Enext.copy()
         return E
 
     def line_co(self, L, short=True, SpaSM=False):
-        """
+        r"""
         The main function of this CICY toolkit. 
         It determines the cohomology of a line bundle over the CY.
         Based on the Leray spectral sequence and Bott-Borel-Weil theorem. 
         By default makes use of the index and vanishing theorem
         to shorten computation time.
+
+        Note: from v0.6 the higher Leray maps occuring in line bundles
+        with zero charges are no longer generic.
+        This, unfortunately means, that SpaSM is no longer used for these maps.
+        A fix for that is plannend in the future.
         
         Parameters
         ----------
@@ -2485,19 +2571,15 @@ class CICY:
                     # first the dim(kernel), which is dimension -image(k)
                     if k != 0 and E1[k-1][j] != 0:
                         E2[k,j] -= images[j][k]
-                    elif k == 0 and j < self.dimA and E1[-1][j+1] != 0 and E1[1][j] == 0:# 
-                        # special case at the edge; assume generic map
-                        E2[k,j] -= min(dimension, sum([self._brackets_dim(E1[-1][j+1][a]) for a in range(len(E1[-1][j+1]))]))
                     # then quotient out the image, -image(k+1)
                     if k < self.K and E1[k+1][j] != 0:
                         E2[k,j] -= images[j][k+1]
-                    elif k == self.K and E1[0][j-1] != 0 and E1[k-1][j] == 0:#
-                        #special case at the edge; assume generic map
-                        E2[k,j] -= min(dimension, sum([self._brackets_dim(E1[0][j-1][a]) for a in range(len(E1[0][j-1]))]))
         if 0 in L:
             #second order contribution for when there are zeros
             # this is messy and will take extra time
-            E2 = self._find_higher_E(E2, E1, origin, images, euler, SpaSM)
+            # disable SpaSM since higher orders maps compute kernel containing floats
+            # furthermore MatMult contains larger integer than the default SpaSM prime
+            E2 = self._find_higher_E(E2, E1, origin, images, euler, False)
 
         #flatten images
         images = list(it.chain(*images))
@@ -2596,7 +2678,22 @@ class CICY:
         return hodge
     
     def _find_pos(self, monomial, vdegrees, dim):
-        
+        r"""Determines the position of a monomial in its monomial basis.
+
+        Parameters
+        ----------
+        monomial : array[int]
+            monomial
+        vdegrees : array[int]
+            degrees in the projective spaces
+        dim : array[int]
+            dimension of the degrees in each projective space
+
+        Returns
+        -------
+        int
+            position in monomial basis
+        """
         start = 0
         pos = 0
         # loop over the whole ambient space
@@ -2674,8 +2771,27 @@ class CICY:
             return "IV_"+str(rank_3)
 
     def enhancement_diagram(self, fname):
-        """ computes enhancement diagramm as in 1910.02963
-        TO DO: fix linear dependencies for non simplicial kähler cones."""
+        r"""Computes enhancement diagramm as in 1910.02963.
+        Assumes that CICY is Kähler favourable.
+
+        TO DO: fix linear dependencies for non simplicial kähler cones.
+               adjust plot size for larger h11.
+
+        Parameters
+        ----------
+        fname : str
+            filename to save file to
+
+        Returns
+        -------
+        matplotlib.pyplot.fig
+            Plot of the enhancement diagram
+        """
+
+        if not self.nfold != 3:
+            logger.warning('Only implemented for three folds.')
+            return 0
+
         if not self.fav:
             logger.warning('CICY is not favourable results are going to be misleading.')
         fig, ax = plt.subplots()
@@ -2712,7 +2828,7 @@ class CICY:
         return fig
 
     def exists_type_III(self):
-        """Determines if there exists a type III in 
+        r"""Determines if there exists a type III in 
         the enhancement diagram.
 
         Returns
@@ -2762,7 +2878,11 @@ class CICY:
         bool
             True if it satisfies all criteria
         """
-           
+        
+        if not self.nfold != 3:
+            logger.warning('Only implemented for three folds.')
+            return 0
+        
         if -1 in np.sign(divisor):
             logger.warning('D should be in Kähler cone.')
 
@@ -2782,11 +2902,23 @@ class CICY:
         return True
 
     def find_kollar(self, r_coeff = -1):
-        r"""
-        use M.p_array.tolist() to not mess up notation in TV.
-        """
+        r"""Finds Kollar divisors with positive coefficients for the 
+        generator of the Kähler cone. Only works for 3-folds.
 
-        # define TV
+        Parameters
+        ----------
+        r_coeff : int, optional
+            range of coefficients, by default -1
+
+        Returns
+        -------
+        list/arrays[int]
+            list of divisors satisfying Kollar criteria.
+        """
+        if not self.nfold != 3:
+            logger.warning('Only implemented for three folds.')
+            return 0
+
         if not self.fav:
             logger.warning('CICY is not favourable. Results are misleading.')
 
@@ -2826,12 +2958,39 @@ def apoly( n, deg):
     
 if __name__ == '__main__':
     conf = np.array([[1,1,1,0,0],[1,1,1,0,0],[1,0,0,1,1],[1,0,0,1,1],[3,1,1,1,1]])
-    M1 = CICY(conf, log=1)
-    print(M1.info())
+    #conf = np.array([[1,1,1],[1,1,1],[1,1,1],[1,1,1],[1,1,1]])
+    M1 = CICY(conf, log=3)
+    #print(M1.info())
     print('----------------------------------------')
-    L = np.array([-2 , 0 , 0 , 0 ,-3])
-    #L = np.array([-2 , -2 , 3 , 0 ,-4])
-    print(M1.line_co(L))#, short=False
-    print(M1.line_co(-L))
-    print(M1.line_co_euler(L))
+    for i in range(-3,1):
+        for t in it.combinations_with_replacement(range(-4,5), r=4):
+            L = np.array(list(t)+[i])
+            print(L)
+            h1 = M1.line_co(L)
+            h2 = M1.line_co(L, short=False)
+            h3 = M1.line_co(-L)[::-1]
+            #h4 = M1.line_co(L, SpaSM=True)
+            e1 = round(M1.line_co_euler(L))
+            e2 = h1[0]-h1[1]+h1[2]-h1[3]
+            if h1[0] != 0 or h1[-1] != 0:
+                slope, _ = M1.l_slope(L)
+                if slope:
+                    print(L, h1, 'vanishing slope')
+            if np.min(h1) < 0:
+                print(L, h1, 'negative')
+            if e1-e2 != 0:
+                print(L, h1, e1, e2, 'euler')
+            if not np.array_equal(h1, h3):
+                print(L, h1, h3, 'serre')
+            if not np.array_equal(h1,h2):
+                print(L, h1, h2, 'short')
+                #if not np.array_equal(h1,h4):
+                #    print(L, h1, h4, 'spasm')
+    #L = np.array([-2 , 0 , 0 , 0 ,-3])
+    #L = np.array([-3 , -3 , -3 , 0 , -3])
+    #print(M1.line_co(L))#, short=False
+    #print(M1.line_co(-L))
+    #print(M1.line_co_euler(L))
+    #M1 = CICY([[1,1,1,0,0,0],[3,1,1,0,0,2],[1,0,0,1,1,0],[3,0,0,1,1,2]], log=3)
+    #print(M1.hodge_data())
     print('done')
