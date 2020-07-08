@@ -2804,7 +2804,7 @@ class CICY:
             Plot of the enhancement diagram
         """
 
-        if not self.nfold != 3:
+        if self.nfold != 3:
             logger.warning('Only implemented for three folds.')
             return 0
 
