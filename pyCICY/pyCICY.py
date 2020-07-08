@@ -2423,11 +2423,11 @@ class CICY:
                                     kernel -= np.linalg.matrix_rank(kernel_map)
                                 else:
                                     kernel -= self._spasm_rank(kernel_map)
-                                kernel_map = self._orth_space_map(kernel_map)
                                 sol_space[str((i,k,j))] = np.copy(kernel_map)
+                                kernel_map = self._orth_space_map(kernel_map.T)
                                 sol_dim[str((i,k,j))] = np.copy(-1*kernel)
                             else:
-                                kernel_map = sol_space[str((i,k,j))]
+                                kernel_map = self._orth_space_map(sol_space[str((i,k,j))].T)
                                 kernel -= sol_dim[str((i,k,j))]
                         kernel += E[k,j]
                         image = 0
@@ -2439,11 +2439,11 @@ class CICY:
                                     image = np.linalg.matrix_rank(image_map)
                                 else:
                                     image = self._spasm_rank(image_map)
-                                image_map = self._orth_space_map(image_map.T)
                                 sol_space[str((i,k+i,j+i-1))] = np.copy(image_map)
+                                image_map = self._orth_space_map(image_map)
                                 sol_dim[str((i,k+i,j+i-1))] = np.copy(image)
                             else:
-                                image_map = sol_space[str((i,k+i,j+i-1))]
+                                image_map = self._orth_space_map(sol_space[str((i,k+i,j+i-1))])
                                 image += sol_dim[str((i,k+i,j+i-1))]
                         Enext[k,j] = max(0, kernel-image)
                         euler += (-1)**(k+j)*Enext[k,j]
@@ -2461,6 +2461,7 @@ class CICY:
                                                  np.copy(image_origin), False, np.copy(Enext[k,j])]
                         else:
                             logger.debug('Found higher maps**2 {} with dim {}'.format(maps, [kernel, image]))
+                            print(image_map.shape, kernel_map.shape, (i,k,j))
                             Emaps_2[k][j] = [np.matmul(image_map, kernel_map), np.copy(Emaps_1[k][j][1]),
                                              np.copy(Emaps_1[k][j][2]), False, np.copy(Enext[k,j])]
                         # if len(E.free coeff) == 1:
@@ -2962,35 +2963,36 @@ if __name__ == '__main__':
     M1 = CICY(conf, log=3)
     #print(M1.info())
     print('----------------------------------------')
-    for i in range(-3,1):
+    for i in range(-4,1):
         for t in it.combinations_with_replacement(range(-4,5), r=4):
             L = np.array(list(t)+[i])
-            print(L)
-            h1 = M1.line_co(L)
-            h2 = M1.line_co(L, short=False)
-            h3 = M1.line_co(-L)[::-1]
-            #h4 = M1.line_co(L, SpaSM=True)
-            e1 = round(M1.line_co_euler(L))
-            e2 = h1[0]-h1[1]+h1[2]-h1[3]
-            if h1[0] != 0 or h1[-1] != 0:
-                slope, _ = M1.l_slope(L)
-                if slope:
-                    print(L, h1, 'vanishing slope')
-            if np.min(h1) < 0:
-                print(L, h1, 'negative')
-            if e1-e2 != 0:
-                print(L, h1, e1, e2, 'euler')
-            if not np.array_equal(h1, h3):
-                print(L, h1, h3, 'serre')
-            if not np.array_equal(h1,h2):
-                print(L, h1, h2, 'short')
+            if 0 in L:
+                print(L)
+                h1 = M1.line_co(L)
+                #h2 = M1.line_co(L, short=False)
+                h3 = M1.line_co(-L)[::-1]
+                #h4 = M1.line_co(L, SpaSM=True)
+                e1 = round(M1.line_co_euler(L))
+                e2 = h1[0]-h1[1]+h1[2]-h1[3]
+                if h1[0] != 0 or h1[-1] != 0:
+                    slope, _ = M1.l_slope(L)
+                    if slope:
+                        print(L, h1, 'vanishing slope')
+                if np.min(h1) < 0:
+                    print(L, h1, 'negative')
+                if e1-e2 != 0:
+                    print(L, h1, e1, e2, 'euler')
+                if not np.array_equal(h1, h3):
+                    print(L, h1, h3, 'serre')
+                #if not np.array_equal(h1,h2):
+                #    print(L, h1, h2, 'short')
                 #if not np.array_equal(h1,h4):
                 #    print(L, h1, h4, 'spasm')
-    #L = np.array([-2 , 0 , 0 , 0 ,-3])
+    L = np.array([-4 , 0 , 0 , 2 ,-4])
     #L = np.array([-3 , -3 , -3 , 0 , -3])
-    #print(M1.line_co(L))#, short=False
-    #print(M1.line_co(-L))
-    #print(M1.line_co_euler(L))
+    print(M1.line_co_euler(L))
+    print(M1.line_co(L))#, short=False
+    print(M1.line_co(-L))
     #M1 = CICY([[1,1,1,0,0,0],[3,1,1,0,0,2],[1,0,0,1,1,0],[3,0,0,1,1,2]], log=3)
     #print(M1.hodge_data())
     print('done')
