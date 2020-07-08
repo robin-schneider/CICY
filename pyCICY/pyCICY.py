@@ -2459,10 +2459,11 @@ class CICY:
                                                  np.copy(image_origin), False, np.copy(Enext[k,j])]
                         else:
                             logger.debug('Found higher maps**2 {} with dim {}'.format(maps, [kernel, image]))
-                            conv_map = np.matmul(image_map.T, sc.linalg.null_space(kernel_map))
+                            kernel_map = self._orth_space_map(kernel_map.T)
+                            conv_map = np.matmul(image_map, kernel_map)
                             projection = self._orth_space_map(conv_map)
                             #final_map = np.matmul(sc.linalg.null_space(image_maps[image[j][k]]), projection)
-                            Emaps_2[k][j] = [np.matmul(sc.linalg.null_space(kernel_map), projection), np.copy(Emaps_1[k][j][1]),
+                            Emaps_2[k][j] = [np.matmul(kernel_map, projection), np.copy(Emaps_1[k][j][1]),
                                              np.copy(Emaps_1[k][j][2]), False, np.copy(Enext[k,j])]
                         # if len(E.free coeff) == 1:
                         #   use Euler to determine?
@@ -2966,7 +2967,7 @@ if __name__ == '__main__':
     for i in range(-4,1):
         for t in it.combinations_with_replacement(range(-4,5), r=4):
             L = np.array(list(t)+[i])
-            if 0 in L:
+            if 0 in np.sign(L) and 1 in np.sign(L) and -1 in np.sign(L):
                 print(L)
                 h1 = M1.line_co(L)
                 #h2 = M1.line_co(L, short=False)
@@ -2988,8 +2989,8 @@ if __name__ == '__main__':
                 #    print(L, h1, h2, 'short')
                 #if not np.array_equal(h1,h4):
                 #    print(L, h1, h4, 'spasm')
-    #L = np.array([-4 , 0 , 3 , 3 ,-4])
-    #L = np.array([-3 , -3 , -3 , 0 , -3])
+    #L = np.array([-4 , 0 , 0 , 2 ,-4])
+    #L = np.array([-4 , 0 , 2 , 2 , -4])
     #print(M1.line_co_euler(L))
     #print(M1.line_co(L))#, short=False
     #print(M1.line_co(-L))
