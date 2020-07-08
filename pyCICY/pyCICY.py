@@ -2547,11 +2547,11 @@ class CICY:
         # quick Kodaira
         if short:
             if np.array_equal(L, np.zeros(len(L))) and self.CY:
-                return [1, 0, 0, 1]
+                return np.array([1 if i == 0 or i == self.nfold else 0 for i in range(self.nfold+1)])
             elif np.all(np.array(L) > 0):
-                return np.round([self.line_co_euler(L), 0, 0, 0])
+                return np.round([self.line_co_euler(L) if i == 0 else 0 for i in range(self.nfold+1)])
             elif np.all(np.array(L) < 0):
-                return np.round([0, 0, 0, -1*self.line_co_euler(L)])
+                return np.round([(-1)**self.nfold*self.line_co_euler(L) if i == self.nfold else 0 for i in range(self.nfold+1)])
 
         # Build Leray tableaux E_1[k][j]
         start = time.time()
