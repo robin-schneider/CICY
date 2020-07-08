@@ -2895,7 +2895,7 @@ class CICY:
             True if it satisfies all criteria
         """
         
-        if not self.nfold != 3:
+        if self.nfold != 3:
             logger.warning('Only implemented for three folds.')
             return 0
         
@@ -2931,7 +2931,7 @@ class CICY:
         list/arrays[int]
             list of divisors satisfying Kollar criteria.
         """
-        if not self.nfold != 3:
+        if self.nfold != 3:
             logger.warning('Only implemented for three folds.')
             return 0
 
