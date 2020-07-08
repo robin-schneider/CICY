@@ -2265,11 +2265,9 @@ class CICY:
                                         sol[image[j][k]] = self._spasm_rank(kernel_map)
                                     dim2 += sol[image[j][k]]
                                     image_maps[image[j][k]] = np.copy(kernel_map)
-                                    kernel_map = self._orth_space_map(kernel_map)
                                     maps[0] = True
                                 else:
                                     kernel_map = image_maps[image[j][k]]
-                                    kernel_map = self._orth_space_map(kernel_map)
                                     maps[0] = True
                                     dim2 += sol[image[j][k]]
                             # check if there is a non trivial image in the kernel map
@@ -2282,11 +2280,9 @@ class CICY:
                                         sol[image[j][k+1]] = self._spasm_rank(image_map)
                                     dim2 += sol[image[j][k+1]]
                                     image_maps[image[j][k+1]] = np.copy(image_map)
-                                    image_map = self._orth_space_map(image_map.T)
                                     maps[1] = True
                                 else:
                                     image_map = image_maps[image[j][k+1]]
-                                    image_map = self._orth_space_map(image_map.T)
                                     dim2 += sol[image[j][k+1]]
                                     maps[1] = True
                             if dim - dim2 == 0:
@@ -2297,13 +2293,15 @@ class CICY:
                             elif np.sum(maps) == 1:
                                 logger.debug('We have maps {} with dim {} at {}.'.format(maps, [dim, dim2], [k,j]))
                                 if maps[0]:
-                                    #Espace[k][j] = [np.copy(kernel_map), E1[k-1][j], origin[k-1][j], False, dim-sol[image[j][k]]]
-                                    Espace[k][j] = [np.copy(kernel_map), E1[k][j], origin[k][j], False, dim-sol[image[j][k]]]
+                                    Espace[k][j] = [self._orth_space_map(kernel_map), E1[k][j], origin[k][j], False, dim-sol[image[j][k]]]
                                 else:
-                                    Espace[k][j] = [np.copy(image_map), E1[k][j], origin[k][j], False, dim-sol[image[j][k+1]]]
+                                    Espace[k][j] = [self._orth_space_map(image_map.T), E1[k][j], origin[k][j], False, dim-sol[image[j][k+1]]]
                             else:
                                 # should be zero di \circ di = 0?
-                                Espace[k][j] = [np.matmul(image_map, kernel_map), E1[k][j], origin[k][j],
+                                conv_map = np.matmul(image_map.T, sc.linalg.null_space(kernel_map))
+                                projection = self._orth_space_map(conv_map)
+                                #final_map = np.matmul(sc.linalg.null_space(image_maps[image[j][k]]), projection)
+                                Espace[k][j] = [np.matmul(sc.linalg.null_space(kernel_map), projection), E1[k][j], origin[k][j],
                                                     False, dim-dim2]
                         else:
                             Espace[k][j] += [0, E1[k][j], origin[k][j], True, dim]
@@ -2424,10 +2422,9 @@ class CICY:
                                 else:
                                     kernel -= self._spasm_rank(kernel_map)
                                 sol_space[str((i,k,j))] = np.copy(kernel_map)
-                                kernel_map = self._orth_space_map(kernel_map.T)
                                 sol_dim[str((i,k,j))] = np.copy(-1*kernel)
                             else:
-                                kernel_map = self._orth_space_map(sol_space[str((i,k,j))].T)
+                                kernel_map = sol_space[str((i,k,j))]
                                 kernel -= sol_dim[str((i,k,j))]
                         kernel += E[k,j]
                         image = 0
@@ -2440,10 +2437,9 @@ class CICY:
                                 else:
                                     image = self._spasm_rank(image_map)
                                 sol_space[str((i,k+i,j+i-1))] = np.copy(image_map)
-                                image_map = self._orth_space_map(image_map)
                                 sol_dim[str((i,k+i,j+i-1))] = np.copy(image)
                             else:
-                                image_map = self._orth_space_map(sol_space[str((i,k+i,j+i-1))])
+                                image_map = sol_space[str((i,k+i,j+i-1))]
                                 image += sol_dim[str((i,k+i,j+i-1))]
                         Enext[k,j] = max(0, kernel-image)
                         euler += (-1)**(k+j)*Enext[k,j]
@@ -2454,15 +2450,19 @@ class CICY:
                         elif np.sum(maps) == 1:
                             logger.debug('Found higher maps {} with dim {}'.format(maps, [kernel, image]))
                             if maps[0]:
+                                kernel_map = self._orth_space_map(kernel_map.T)
                                 Emaps_2[k][j] = [kernel_map, np.copy(Emaps_1[k][j][1]),
                                                  np.copy(Emaps_1[k][j][2]), False, np.copy(Enext[k,j])]
                             else:
+                                image_map = self._orth_space_map(image_map)
                                 Emaps_2[k][j] = [image_map, np.copy(Emaps_1[k][j][1]), 
                                                  np.copy(image_origin), False, np.copy(Enext[k,j])]
                         else:
                             logger.debug('Found higher maps**2 {} with dim {}'.format(maps, [kernel, image]))
-                            print(image_map.shape, kernel_map.shape, (i,k,j))
-                            Emaps_2[k][j] = [np.matmul(image_map, kernel_map), np.copy(Emaps_1[k][j][1]),
+                            conv_map = np.matmul(image_map.T, sc.linalg.null_space(kernel_map))
+                            projection = self._orth_space_map(conv_map)
+                            #final_map = np.matmul(sc.linalg.null_space(image_maps[image[j][k]]), projection)
+                            Emaps_2[k][j] = [np.matmul(sc.linalg.null_space(kernel_map), projection), np.copy(Emaps_1[k][j][1]),
                                              np.copy(Emaps_1[k][j][2]), False, np.copy(Enext[k,j])]
                         # if len(E.free coeff) == 1:
                         #   use Euler to determine?
@@ -2988,11 +2988,11 @@ if __name__ == '__main__':
                 #    print(L, h1, h2, 'short')
                 #if not np.array_equal(h1,h4):
                 #    print(L, h1, h4, 'spasm')
-    L = np.array([-4 , 0 , 0 , 2 ,-4])
+    #L = np.array([-4 , 0 , 3 , 3 ,-4])
     #L = np.array([-3 , -3 , -3 , 0 , -3])
-    print(M1.line_co_euler(L))
-    print(M1.line_co(L))#, short=False
-    print(M1.line_co(-L))
+    #print(M1.line_co_euler(L))
+    #print(M1.line_co(L))#, short=False
+    #print(M1.line_co(-L))
     #M1 = CICY([[1,1,1,0,0,0],[3,1,1,0,0,2],[1,0,0,1,1,0],[3,0,0,1,1,2]], log=3)
     #print(M1.hodge_data())
     print('done')
