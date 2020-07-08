@@ -20,7 +20,7 @@ v0.5 - Added non generic maps for higher Leray maps. Such maps
 		occur for K >= 2 and when there are line bundles with 0-charges.
 		New code now has significant worse performance but should lead to
 		consistent results. Currently SpaSM is disabled for such maps.
-		Added some functions for finding enhancement diagrams and Kollars.
+		Added some preliminary functions for finding enhancement diagrams and Kollars.
 
 v0.4 - cleaned up some code, fixed bug with semipositive line bundles.
 

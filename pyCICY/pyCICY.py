@@ -16,9 +16,23 @@ Robin Schneider (robin.schneider@physics.uu.se)
 
 Version
 -------
-v0.02 - Major overhaul. Bug fixes, more numpy,
-        some efficiency upgrade, additional functions - 4.11.2019.
-v0.01 - pyCICY toolkit made available - 29.5.2019.
+v0.5 - Added non generic maps for higher Leray maps. Such maps
+		occur for K >= 2 and when there are line bundles with 0-charges.
+		New code now has significant worse performance but should lead to
+		consistent results. Currently SpaSM is disabled for such maps.
+		Added some preliminary functions for finding enhancement diagrams and Kollars.
+
+v0.4 - cleaned up some code, fixed bug with semipositive line bundles.
+
+v0.3 - Some bug fixes, more numpy
+
+v0.2 - Major overhaul. Bug fixes, more numpy,
+        some efficiency upgrade, improved logging,
+		SpaSM support, relabeling of functions. 
+		INFO: breaks backwards compatibility for some fcuntions.
+		- 11.11.2019.
+
+v0.1 - pyCICY toolkit made available - 29.5.2019.
 
 """
 
@@ -2959,41 +2973,4 @@ def apoly( n, deg):
                 yield (i,) + j        
     
 if __name__ == '__main__':
-    conf = np.array([[1,1,1,0,0],[1,1,1,0,0],[1,0,0,1,1],[1,0,0,1,1],[3,1,1,1,1]])
-    #conf = np.array([[1,1,1],[1,1,1],[1,1,1],[1,1,1],[1,1,1]])
-    M1 = CICY(conf, log=3)
-    #print(M1.info())
-    print('----------------------------------------')
-    for i in range(-4,1):
-        for t in it.combinations_with_replacement(range(-4,5), r=4):
-            L = np.array(list(t)+[i])
-            if 0 in np.sign(L) and 1 in np.sign(L) and -1 in np.sign(L):
-                print(L)
-                h1 = M1.line_co(L)
-                #h2 = M1.line_co(L, short=False)
-                h3 = M1.line_co(-L)[::-1]
-                #h4 = M1.line_co(L, SpaSM=True)
-                e1 = round(M1.line_co_euler(L))
-                e2 = h1[0]-h1[1]+h1[2]-h1[3]
-                if h1[0] != 0 or h1[-1] != 0:
-                    slope, _ = M1.l_slope(L)
-                    if slope:
-                        print(L, h1, 'vanishing slope')
-                if np.min(h1) < 0:
-                    print(L, h1, 'negative')
-                if e1-e2 != 0:
-                    print(L, h1, e1, e2, 'euler')
-                if not np.array_equal(h1, h3):
-                    print(L, h1, h3, 'serre')
-                #if not np.array_equal(h1,h2):
-                #    print(L, h1, h2, 'short')
-                #if not np.array_equal(h1,h4):
-                #    print(L, h1, h4, 'spasm')
-    #L = np.array([-4 , 0 , 0 , 2 ,-4])
-    #L = np.array([-4 , 0 , 2 , 2 , -4])
-    #print(M1.line_co_euler(L))
-    #print(M1.line_co(L))#, short=False
-    #print(M1.line_co(-L))
-    #M1 = CICY([[1,1,1,0,0,0],[3,1,1,0,0,2],[1,0,0,1,1,0],[3,0,0,1,1,2]], log=3)
-    #print(M1.hodge_data())
     print('done')
