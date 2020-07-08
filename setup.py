@@ -26,5 +26,6 @@ setuptools.setup(
         "scipy",
         "sympy",
         "texttable",
+        "matplotlib",
     ],
 )
