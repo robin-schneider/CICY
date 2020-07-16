@@ -2343,7 +2343,9 @@ class CICY:
         nsec1 = len(space1[2][0])
         nsec2 = len(space2[2][0])
         for i, entry1 in enumerate(space1[1]):
+            entry1 = np.abs(entry1)
             for j, entry2 in enumerate(space2[1]):
+                entry2 = np.abs(entry2)
                 missing_maps = list(set(space1[2][i]).difference(space2[2][j]))
                 if len(missing_maps) == nsec1-nsec2:
                     # construct intermediate tensors
@@ -2351,6 +2353,7 @@ class CICY:
                     for r in range(self.len):
                         # there is some ambiguity here, when it comes
                         # to raising and lowering new tensors.
+                        # by taking the abs, we maximize wrt to intermediate tensor
                         for t in it.product([1,-1], repeat=len(missing_maps)):
                             degree = entry1[r]-entry2[r]
                             for s, k in zip(t,missing_maps):
