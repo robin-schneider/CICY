@@ -2730,30 +2730,73 @@ class CICY:
 
         return pos
 
-    def _find_KI(self, I):
-        KI = 0
+    def _find_K(self, I):
+        r"""We compute:
+        K^I = \sum_{i,j,k \in I} triple[i,j,k]
+
+        Parameters
+        ----------
+        I : list
+            list of Kähler indices send to inf
+        triple : np.array[h11, h11, h11]
+            triple intersection numbers
+
+        Returns
+        -------
+        int
+            K^I
+        """
+        K = 0
         for tuples in it.product(I, repeat=3):
-            KI += self.triple[tuples]
+            K += self.triple[tuples]
+        return K
+
+    def _find_KI(self, I):
+        r"""We compute:
+        K^I_I = \sum_{i,j \in I} triple[i,j,I]
+
+        Parameters
+        ----------
+        I : list
+            list of Kähler indices send to inf
+        triple : np.array[h11, h11, h11]
+            triple intersection numbers
+
+        Returns
+        -------
+        np.array[h11]
+            K^I_I
+        """
+        KI = np.zeros(len(self.triple))
+        for i in range(len(self.triple)-len(I)):
+            if i not in I:
+                for tuples in it.product(I, repeat=2):
+                    KI[i] += self.triple[tuples[0], tuples[1], i]
         return KI
 
-    def _find_KII(self, I):
-        KII = np.zeros(self.len-len(I))
-        complement = np.arange(self.len)
-        complement = np.delete(complement, I)
-        for i in range(self.len-len(I)):
-            for tuples in it.product(I, repeat=2):
-                KII[i] += self.triple[tuples[0], tuples[1], complement[i]]
-        return KII
+    def _find_KIJ(self, I):
+        r"""We compute:
+        K^I_IJ = \sum_{i \in I} triple[i,I,J]
 
-    def _find_KIII(self, I):
+        Parameters
+        ----------
+        I : list
+            list of Kähler indices send to inf
+        triple : np.array[h11, h11, h11]
+            triple intersection numbers
+
+        Returns
+        -------
+        np.array[h11, h11]
+            K^I_IJ
+        """
         if len(I) == self.len:
             return np.array(0)
-        KIJ = np.zeros((self.len-len(I), self.len-len(I)))
-        complement = np.arange(self.len)
-        complement = np.delete(complement, I)
-        for t1 in it.product(range(len(complement)), repeat=2):
-            for i in I:
-                KIJ[t1[0], t1[1]] += self.triple[i, complement[t1[0]], complement[t1[1]]]
+        KIJ = np.zeros((len(self.triple), len(self.triple)))
+        for i in range(len(self.triple)):
+            for j in range(len(self.triple)):
+                for k in I:
+                    KIJ[i, j] += self.triple[k, i, j]
         return KIJ
 
     def find_type(self, I):
@@ -2775,9 +2818,9 @@ class CICY:
         str
             type II/III/IV
         """
-        rank_1 = np.linalg.matrix_rank(self._find_KI(I))
-        rank_2 = np.linalg.matrix_rank(self._find_KII(I))
-        rank_3 = np.linalg.matrix_rank(self._find_KIII(I))
+        rank_1 = np.linalg.matrix_rank(self._find_K(I))
+        rank_2 = np.linalg.matrix_rank(self._find_KI(I))
+        rank_3 = np.linalg.matrix_rank(self._find_KIJ(I))
         if rank_1 == 0:
             if rank_2 == 1:
                 logger.debug('Type III_{} with ({})'.format(rank_3-2, [rank_1, rank_2, rank_3]))
