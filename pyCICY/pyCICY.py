@@ -2619,7 +2619,7 @@ class CICY:
                 end = time.time()
                 logger.info('Thus we find h^*={}.'.format(hodge))
                 logger.info('The calculation took {}.'.format(end-start))
-            return hodge
+            return np.array(hodge)
         
         # now there is a theorem stating if L is slope stable,
         # then H^0 = H^3 = 0 by Serre.
@@ -2694,7 +2694,7 @@ class CICY:
             logger.info('Finally, we find h = {}.'.format(hodge))
             logger.info('The calculation took: {}.'.format(end-start))
         
-        return hodge
+        return np.array(hodge)
     
     def _find_pos(self, monomial, vdegrees, dim):
         r"""Determines the position of a monomial in its monomial basis.
