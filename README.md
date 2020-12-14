@@ -14,27 +14,6 @@ or get the latest version
 pip install --upgrade git+https://github.com/robin-schneider/CICY.git
 ```
 
-## Changelog
-
-v0.5 - Added non generic maps for higher Leray maps. Such maps
-		occur for K >= 2 and when there are line bundles with 0-charges.
-		New code now has significant worse performance but should lead to
-		consistent results. Currently SpaSM is disabled for such maps.
-		Added some preliminary functions for finding enhancement diagrams and Kollars.
-
-v0.4 - cleaned up some code, fixed bug with semipositive line bundles.
-
-v0.3 - Some bug fixes, more numpy
-
-v0.2 - Major overhaul. Bug fixes, more numpy,
-        some efficiency upgrade, improved logging,
-		SpaSM support, relabeling of functions. 
-		INFO: breaks backwards compatibility for some fcuntions.
-		- 11.11.2019.
-
-v0.1 - pyCICY toolkit made available - 29.5.2019.
-
-
 ## Quickstart
 
 We import the CICY object from the module
@@ -55,7 +34,7 @@ Now we are able to do some calculations, e.g.
 M.line_co([1,2,-4,1])
 ```
 
-determines the line bundle cohomologies of the line bundle L = O(1,2,-4,1).
+determines the hodge numbers of the line bundle L = O(1,2,-4,1).
 
 Since the rank computation takes the most time we included [SpasM - github](http://github.com/cbouilla/spasm). The *rank_hybrid* executable of SpaSM has to be in your $PATH.
 
@@ -135,4 +114,4 @@ note = {\url{http://github.com/cbouilla/spasm}}
 
 ## Useful software
 
-The pyCICY module is (mostly) backwards compatible with python 2.7. Hence, it can be used in [Sage](http://www.sagemath.org/). Other useful packages for dealing with Calabi Yau manifolds in toric varieties are [cohomCalg](https://github.com/BenjaminJurke/cohomCalg/) and [PALP](http://hep.itp.tuwien.ac.at/~kreuzer/CY/CYpalp.html).
+pyCICY works nicely with [Sage](http://www.sagemath.org/). Other useful packages for dealing with Calabi Yau manifolds in toric varieties are [cohomCalg](https://github.com/BenjaminJurke/cohomCalg/) and [PALP](http://hep.itp.tuwien.ac.at/~kreuzer/CY/CYpalp.html).
