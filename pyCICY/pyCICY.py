@@ -2266,7 +2266,7 @@ class CICY:
                 if E2[k,j] != 0:
                     if j < self.dimA+1:#and k-1 >= 0 and E2[k-1, j] != 0
                         dim = np.sum([self._brackets_dim(entry) for entry in E1[k][j]])
-                        if type(E2[k,j]) is not int and type(E2[k,j]) is not sp.numbers.Integer:
+                        if type(E2[k,j]) is not int and type(E2[k,j]) is not sp.core.numbers.Integer:
                             dim2 = 0
                             maps = [False, False]
                             # check if we have a non trivial kernel in the kernel map
